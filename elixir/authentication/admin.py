@@ -1,11 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserChangeForm
 from django.utils.translation import ugettext_lazy as _
 
 from authentication.models import User
 
 
+class CustomUserChangeForm(UserChangeForm):
+    class Meta(UserChangeForm.Meta):
+        model = User
+
+
 class UserAdminConfig(UserAdmin):
+    form = CustomUserChangeForm
+
     search_fields = ("email", "first_name", "last_name", "phone_number")
     list_filter = (
         "gender",
@@ -13,14 +21,19 @@ class UserAdminConfig(UserAdmin):
         "date_joined",
         "country",
     )
-    ordering = ("-date_joined",)
+    ordering = ("-email",)
     list_display = (
+        "id",
+        "uuid",
         "email",
         "first_name",
         "last_name",
-        "phone_number",
         "gender",
+        "date_of_birth",
+        "phone_number",
+        "country",
         "national_id",
+        "date_joined",
         "is_active",
     )
     fieldsets = (

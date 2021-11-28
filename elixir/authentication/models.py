@@ -40,13 +40,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         MALE = "MALE", _("Male")
         FEMALE = "FEMALE", _("Female")
 
-    id = models.BigAutoField(_("ID"), auto_created=True, primary_key=True)
+    id = models.BigAutoField(_("Primary Key"), auto_created=True, primary_key=True)
     uuid = models.UUIDField(_("UUID"), unique=True, default=uuid.uuid4, editable=False)
     first_name = models.CharField(_("First Name"), max_length=32)
     last_name = models.CharField(_("Last Name"), max_length=32)
     country = CountryField(_("Country of Residence"))
     national_id = models.CharField(
-        _("National ID"), blank=True, null=True, max_length=32
+        _("National ID Number"), blank=True, null=True, max_length=32, unique=True
     )
     gender = models.CharField(_("Gender"), max_length=6, choices=Gender.choices)
     date_of_birth = models.DateField(_("Date of Birth"))
@@ -70,7 +70,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = "user"
         verbose_name_plural = "users"
 
-    def __repr__(self):
+    def __str__(self):
         return self.get_full_name()
 
     @property

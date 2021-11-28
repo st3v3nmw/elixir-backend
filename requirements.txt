@@ -1,10 +1,11 @@
 # Web
 Django
+django-phonenumber-field[phonenumbers]
+django-countries
+django-grappelli
 djangorestframework
 markdown
 django-filter
-django-phonenumber-field[phonenumbers]
-django-countries
 
 # Database
 psycopg2-binary
