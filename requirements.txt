@@ -1,0 +1,13 @@
+# Web
+Django
+djangorestframework
+markdown
+django-filter
+django-phonenumber-field[phonenumbers]
+
+# Database
+psycopg2-binary
+
+# Testing
+flake8
+pytest
