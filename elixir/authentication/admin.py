@@ -1,17 +1,17 @@
 from django.contrib import admin
-from authentication.models import User
 from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import ugettext_lazy as _
+
+from authentication.models import User
 
 
 class UserAdminConfig(UserAdmin):
     search_fields = ("email", "first_name", "last_name", "phone_number")
     list_filter = (
-        "email",
-        "first_name",
-        "last_name",
-        "phone_number",
         "gender",
         "is_active",
+        "date_joined",
+        "country",
     )
     ordering = ("-date_joined",)
     list_display = (
@@ -20,11 +20,12 @@ class UserAdminConfig(UserAdmin):
         "last_name",
         "phone_number",
         "gender",
+        "national_id",
         "is_active",
     )
     fieldsets = (
         (
-            "Biographical Information",
+            _("Biographical Information"),
             {
                 "fields": (
                     "email",
@@ -33,11 +34,13 @@ class UserAdminConfig(UserAdmin):
                     "gender",
                     "date_of_birth",
                     "phone_number",
+                    "country",
+                    "national_id",
                 )
             },
         ),
-        ("Status", {"fields": ("is_active",)}),
-        ("Other Information", {"fields": ("id", "uuid", "date_joined")}),
+        (_("Status"), {"fields": ("is_active",)}),
+        (_("Other Information"), {"fields": ("id", "uuid", "date_joined")}),
     )
     readonly_fields = ["id", "uuid", "date_joined"]
 

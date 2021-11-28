@@ -6,7 +6,9 @@ from django.contrib.auth.models import (
     PermissionsMixin,
     BaseUserManager,
 )
+from django.utils.translation import ugettext_lazy as _
 from phonenumber_field.modelfields import PhoneNumberField
+from django_countries.fields import CountryField
 
 
 class CustomUserManager(BaseUserManager):
@@ -14,7 +16,7 @@ class CustomUserManager(BaseUserManager):
 
     def _create_user(self, email, password, **kwargs):
         if not email:
-            raise ValueError("An email must be provided.")
+            raise ValueError(_("An email must be provided."))
 
         email = self.normalize_email(email)
         user = self.model(email=email, **kwargs)
@@ -28,26 +30,30 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, password, **kwargs):
         kwargs.setdefault("is_superuser", True)
         if kwargs.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
+            raise ValueError(_("Superuser must have is_superuser=True."))
 
         return self._create_user(email, password, **kwargs)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     class Gender(models.TextChoices):
-        MALE = "MALE", "Male"
-        FEMALE = "FEMALE", "Female"
+        MALE = "MALE", _("Male")
+        FEMALE = "FEMALE", _("Female")
 
-    id = models.BigAutoField("ID", auto_created=True, primary_key=True)
-    uuid = models.UUIDField("UUID", unique=True, default=uuid.uuid4, editable=False)
-    first_name = models.CharField("First Name", max_length=32)
-    last_name = models.CharField("Last Name", max_length=32)
-    gender = models.CharField("Gender", max_length=6, choices=Gender.choices)
-    date_of_birth = models.DateField("Date of Birth")
-    email = models.EmailField("Email Address", unique=True)
-    phone_number = PhoneNumberField("Phone Number")
-    date_joined = models.DateTimeField("Date Joined", auto_now_add=True)
-    is_active = models.BooleanField("Is Active", default=True)
+    id = models.BigAutoField(_("ID"), auto_created=True, primary_key=True)
+    uuid = models.UUIDField(_("UUID"), unique=True, default=uuid.uuid4, editable=False)
+    first_name = models.CharField(_("First Name"), max_length=32)
+    last_name = models.CharField(_("Last Name"), max_length=32)
+    country = CountryField(_("Country of Residence"))
+    national_id = models.CharField(
+        _("National ID"), blank=True, null=True, max_length=32
+    )
+    gender = models.CharField(_("Gender"), max_length=6, choices=Gender.choices)
+    date_of_birth = models.DateField(_("Date of Birth"))
+    email = models.EmailField(_("Email Address"), unique=True)
+    phone_number = PhoneNumberField(_("Phone Number"))
+    date_joined = models.DateTimeField(_("Date Joined"), auto_now_add=True)
+    is_active = models.BooleanField(_("Is Active"), default=True)
 
     objects = CustomUserManager()
 
