@@ -2,7 +2,6 @@
 Django
 django-phonenumber-field[phonenumbers]
 django-countries
-django-grappelli
 djangorestframework
 markdown
 django-filter
@@ -12,4 +11,5 @@ psycopg2-binary
 
 # Testing
 flake8
-pytest
+coverage
+model_bakery

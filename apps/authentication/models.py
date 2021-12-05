@@ -15,13 +15,11 @@ class CustomUserManager(BaseUserManager):
     use_in_migrations = True
 
     def _create_user(self, email, password, **kwargs):
-        if not email:
-            raise ValueError(_("An email must be provided."))
-
         email = self.normalize_email(email)
         user = self.model(email=email, **kwargs)
         user.set_password(password)
         user.save(using=self._db)
+        return user
 
     def create_user(self, email, password, **kwargs):
         kwargs.setdefault("is_superuser", False)
@@ -40,8 +38,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         MALE = "MALE", _("Male")
         FEMALE = "FEMALE", _("Female")
 
-    id = models.BigAutoField(_("Primary Key"), auto_created=True, primary_key=True)
-    uuid = models.UUIDField(_("UUID"), unique=True, default=uuid.uuid4, editable=False)
+    uuid = models.UUIDField(
+        _("UUID"), unique=True, default=uuid.uuid4, editable=False, primary_key=True
+    )
     first_name = models.CharField(_("First Name"), max_length=32)
     last_name = models.CharField(_("Last Name"), max_length=32)
     country = CountryField(_("Country of Residence"))
@@ -67,6 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     ]
 
     class Meta:
+        ordering = ["date_joined"]
         verbose_name = "user"
         verbose_name_plural = "users"
 
