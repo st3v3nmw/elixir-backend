@@ -1,4 +1,4 @@
-from apps.authentication.models import User
+from authentication.models import User
 from utils.validation import validate_post_data
 
 

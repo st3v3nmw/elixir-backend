@@ -1,0 +1,35 @@
+import pytest
+
+from authentication.models import User
+
+# authentication app
+
+
+@pytest.fixture
+def user_default_fields():
+    defaults = {
+        "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
+        "first_name": "Jane",
+        "last_name": "Doe",
+        "phone_number": "+254712345678",
+        "country": "KE",
+        "national_id": "12345",
+        "gender": "FEMALE",
+        "date_of_birth": "2000-12-07",
+        "date_joined": "2021-12-07 20:27:21.693131+00:00",
+    }
+    return defaults
+
+
+@pytest.fixture
+def normal_user(user_default_fields) -> User:
+    return User.objects.create_user(
+        "user@example.com", "some-password", **user_default_fields
+    )
+
+
+@pytest.fixture
+def admin(user_default_fields) -> User:
+    return User.objects.create_superuser(
+        "user@example.com", "some-password", **user_default_fields
+    )

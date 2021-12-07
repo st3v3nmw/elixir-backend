@@ -5,7 +5,7 @@ urlpatterns = [
         "api/",
         include(
             [
-                path("auth/", include("apps.authentication.urls")),
+                path("auth/", include("authentication.urls")),
             ]
         ),
     ),
