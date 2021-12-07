@@ -24,11 +24,11 @@ def test_create_error_payload(mock_json_response):
 
 
 @pytest.mark.django_db
-def test_serialize_object(normal_user, user_default_fields):
-    expected = user_default_fields
-    expected["date_joined"] = str(normal_user.date_joined)
+def test_serialize_object(normal_user_fixture, user_default_fields_fixture):
+    expected = user_default_fields_fixture
+    expected["date_joined"] = str(normal_user_fixture.date_joined)
     expected["email"] = "user@example.com"
     expected["is_active"] = "True"
 
-    result = serialize_object(normal_user, User)
+    result = serialize_object(normal_user_fixture, User)
     assert expected == result

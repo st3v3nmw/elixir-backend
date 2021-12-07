@@ -6,7 +6,7 @@ from authentication.models import User
 
 
 @pytest.fixture
-def user_default_fields():
+def user_default_fields_fixture():
     defaults = {
         "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
         "first_name": "Jane",
@@ -22,14 +22,14 @@ def user_default_fields():
 
 
 @pytest.fixture
-def normal_user(user_default_fields) -> User:
+def normal_user_fixture(user_default_fields_fixture) -> User:
     return User.objects.create_user(
-        "user@example.com", "some-password", **user_default_fields
+        "user@example.com", "some-password", **user_default_fields_fixture
     )
 
 
 @pytest.fixture
-def admin(user_default_fields) -> User:
+def admin_fixture(user_default_fields_fixture) -> User:
     return User.objects.create_superuser(
-        "user@example.com", "some-password", **user_default_fields
+        "user@example.com", "some-password", **user_default_fields_fixture
     )
