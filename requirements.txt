@@ -11,5 +11,7 @@ psycopg2-binary
 
 # Testing
 flake8
-coverage
 model_bakery
+pytest
+pytest-django
+pytest-cov
