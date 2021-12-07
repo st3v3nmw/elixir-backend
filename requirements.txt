@@ -2,9 +2,6 @@
 Django
 django-phonenumber-field[phonenumbers]
 django-countries
-djangorestframework
-markdown
-django-filter
 
 # Database
 psycopg2-binary

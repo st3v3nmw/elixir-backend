@@ -59,10 +59,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = [
         "first_name",
         "last_name",
+        "country",
+        "national_id",
         "gender",
         "date_of_birth",
         "phone_number",
     ]
+
+    VALIDATION_FIELDS = [USERNAME_FIELD, "password"] + REQUIRED_FIELDS
+    SERIALIZATION_FIELDS = (
+        ["uuid", USERNAME_FIELD] + REQUIRED_FIELDS + ["date_joined", "is_active"]
+    )
 
     class Meta:
         ordering = ["date_joined"]
