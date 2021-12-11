@@ -1,3 +1,6 @@
+# Environment variables
+python-dotenv
+
 # Web
 Django
 django-phonenumber-field[phonenumbers]
@@ -5,6 +8,10 @@ django-countries
 
 # Database
 psycopg2-binary
+
+# Authentication
+cryptography
+pyjwt
 
 # Testing
 flake8

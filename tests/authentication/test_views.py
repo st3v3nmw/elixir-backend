@@ -1,15 +1,14 @@
+import os
 import json
 
+import jwt
 import pytest
 from django.test import Client
 
-pytestmark = pytest.mark.django_db
 
-
-def test_login_endpoint_missing_fields() -> None:
+def test_registration_endpoint_missing_fields() -> None:
     client = Client()
 
-    # missing fields
     response = client.post(
         "/api/auth/register",
         {
@@ -33,31 +32,32 @@ def test_login_endpoint_missing_fields() -> None:
     }
 
 
-def test_login_endpoint_proper_data(user_default_fields_fixture) -> None:
+@pytest.mark.django_db
+def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> None:
     client = Client()
 
-    user_default_fields_fixture["email"] = "jane@example.com"
-    user_default_fields_fixture["password"] = "some-password"
+    patient_default_fields_fixture["email"] = "john@example.com"
+    patient_default_fields_fixture["password"] = "some-password"
     response = client.post(
         "/api/auth/register",
-        user_default_fields_fixture,
+        patient_default_fields_fixture,
         content_type="application/json",
     )
     response_json = json.loads(response.content)
-    user_default_fields_fixture["date_joined"] = response_json["data"]["date_joined"]
-    user_default_fields_fixture["is_active"] = "True"
-    user_default_fields_fixture.pop("password")
+    patient_default_fields_fixture["date_joined"] = response_json["data"]["date_joined"]
+    patient_default_fields_fixture["is_active"] = "True"
+    patient_default_fields_fixture.pop("password")
     assert response_json == {
         "status": "success",
-        "data": user_default_fields_fixture,
+        "data": patient_default_fields_fixture,
         "message": "User created successfully.",
     }
 
     # attempt to register user with the same data
-    user_default_fields_fixture["password"] = "some-password"
+    patient_default_fields_fixture["password"] = "some-password"
     response = client.post(
         "/api/auth/register",
-        user_default_fields_fixture,
+        patient_default_fields_fixture,
         content_type="application/json",
     )
     response_json = json.loads(response.content)
@@ -66,3 +66,50 @@ def test_login_endpoint_proper_data(user_default_fields_fixture) -> None:
         "data": {"email": "unique_key_violation"},
         "message": "",
     }
+
+
+@pytest.mark.django_db
+def test_login_endpoint(patient_fixture):
+    client = Client()
+
+    # login failure
+    response = client.post(
+        "/api/auth/login",
+        {
+            "email": "john@example.com",
+            "password": "wrong-password",
+        },
+        content_type="application/json",
+    )
+    response_json = json.loads(response.content)
+    assert response_json == {
+        "status": "error",
+        "data": {"message": "login_failed"},
+        "message": "",
+    }
+
+    # login success
+    response = client.post(
+        "/api/auth/login",
+        {
+            "email": "john@example.com",
+            "password": "some-password",
+        },
+        content_type="application/json",
+    )
+    response_json = json.loads(response.content)
+    assert response_json["status"] == "success"
+    decoded_token = jwt.decode(
+        response_json["data"]["token"],
+        response_json["data"]["public_key"],
+        algorithms=[response_json["data"]["algorithm"]],
+    )
+    assert decoded_token["sub"] == patient_fixture.uuid
+    assert decoded_token["roles"] == "Patient"
+
+
+def test_get_public_key():
+    client = Client()
+    response_json = json.loads(client.get("/api/auth/public-key").content)
+    assert response_json["data"]["algorithm"] == "RS384"
+    assert response_json["data"]["public_key"] == os.environ["JWT_PUBLIC_KEY"]

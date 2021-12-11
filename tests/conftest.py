@@ -7,15 +7,15 @@ from authentication.models import User
 
 
 @pytest.fixture
-def user_default_fields_fixture():
+def patient_default_fields_fixture():
     defaults = {
         "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
-        "first_name": "Jane",
+        "first_name": "John",
         "last_name": "Doe",
         "phone_number": "+254712345678",
         "country": "KE",
         "national_id": "12345",
-        "gender": "FEMALE",
+        "gender": "MALE",
         "date_of_birth": "2000-12-07",
         "date_joined": "2021-12-07 20:27:21.693131+00:00",
     }
@@ -23,7 +23,7 @@ def user_default_fields_fixture():
 
 
 @pytest.fixture
-def user_fixture(user_default_fields_fixture) -> User:
+def patient_fixture(patient_default_fields_fixture) -> User:
     return User.objects.create_user(
-        "user@example.com", "some-password", **user_default_fields_fixture
+        "john@example.com", "some-password", **patient_default_fields_fixture
     )

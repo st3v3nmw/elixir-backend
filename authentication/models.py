@@ -72,4 +72,4 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return User.objects.create_user(**fields)
 
     def __str__(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.uuid}: {self.first_name} {self.last_name}"

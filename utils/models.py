@@ -10,15 +10,6 @@ class BaseModel:
     SERIALIZATION_FIELDS = []
 
     @classmethod
-    def validate_post_data(cls, request_data):
-        missing_fields = {}
-        for field in cls.VALIDATION_FIELDS:
-            if field not in request_data:
-                missing_fields[field] = ErrorCode.FIELD_REQUIRED
-
-        return len(missing_fields) == 0, missing_fields
-
-    @classmethod
     def create(cls, _):
         raise NotImplementedError(
             "create(cls, fields) must be implemented by the child class."
