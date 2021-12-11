@@ -6,6 +6,7 @@ urlpatterns = [
         include(
             [
                 path("auth/", include("authentication.urls")),
+                path("registry/", include("registry.urls")),
             ]
         ),
     ),

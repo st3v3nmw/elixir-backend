@@ -14,7 +14,7 @@ def test_registration_endpoint_missing_fields() -> None:
         {
             "email": "adelaide@example.com",
             "first_name": "Adelaide",
-            "last_name": "Doe",
+            "surname": "Doe",
         },
         content_type="application/json",
     )
@@ -22,7 +22,6 @@ def test_registration_endpoint_missing_fields() -> None:
         "status": "error",
         "data": {
             "password": "field_required",
-            "country": "field_required",
             "national_id": "field_required",
             "gender": "field_required",
             "date_of_birth": "field_required",
@@ -63,7 +62,7 @@ def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> No
     response_json = json.loads(response.content)
     assert response_json == {
         "status": "error",
-        "data": {"email": "unique_key_violation"},
+        "data": {"uuid": "unique_key_violation"},
         "message": "",
     }
 

@@ -8,12 +8,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
 from .models import User
-from utils.payload import (
+from common.payload import (
     ErrorCode,
     create_success_payload,
     create_error_payload,
 )
-from utils.validation import validate_post_data
+from common.validation import validate_post_data
 
 
 @csrf_exempt

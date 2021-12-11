@@ -16,7 +16,7 @@ pip install -r requirements.txt
 sudo apt install -y postgresql postgresql-contrib
 sudo -u postgres createdb elixir
 sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'x9D42Q8USGAthruU8CxD7vzxXYtmwAku';"
-./manage.sh migrate
+./manage.py migrate
 
 # Static
-./manage.sh collectstatic
+./manage.py collectstatic

@@ -1,6 +1,6 @@
 import json
 
-from utils.payload import ErrorCode
+from common.payload import ErrorCode
 
 
 def validate_post_data(request_data, required_fields):

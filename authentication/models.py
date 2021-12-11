@@ -1,15 +1,12 @@
-import uuid
-
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
     BaseUserManager,
 )
-from phonenumber_field.modelfields import PhoneNumberField
-from django_countries.fields import CountryField
 
-from utils.models import BaseModel
+from common.models import BaseModel, Entity
+from common.constants import GENDERS
 
 
 class CustomUserManager(BaseUserManager):
@@ -23,34 +20,23 @@ class CustomUserManager(BaseUserManager):
         return user
 
 
-class User(AbstractBaseUser, PermissionsMixin, BaseModel):
-    class Gender(models.TextChoices):
-        MALE = "MALE", "Male"
-        FEMALE = "FEMALE", "Female"
+class User(AbstractBaseUser, Entity, PermissionsMixin):
+    GENDERS = BaseModel.preprocess_choices(GENDERS)
 
-    uuid = models.UUIDField(
-        "UUID", unique=True, default=uuid.uuid4, editable=False, primary_key=True
-    )
     first_name = models.CharField("First Name", max_length=32)
-    last_name = models.CharField("Last Name", max_length=32)
-    country = CountryField("Country of Residence")
+    surname = models.CharField("Last Name", max_length=32)
     national_id = models.CharField(
         "National ID Number", blank=True, null=True, max_length=32, unique=True
     )
-    gender = models.CharField("Gender", max_length=6, choices=Gender.choices)
+    gender = models.CharField("Gender", choices=GENDERS, max_length=6)
     date_of_birth = models.DateField("Date of Birth")
-    email = models.EmailField("Email Address", unique=True)
-    phone_number = PhoneNumberField("Phone Number")
-    date_joined = models.DateTimeField("Date Joined", auto_now_add=True)
-    is_active = models.BooleanField("Is Active", default=True)
 
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = [
         "first_name",
-        "last_name",
-        "country",
+        "surname",
         "national_id",
         "gender",
         "date_of_birth",
@@ -72,4 +58,4 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
         return User.objects.create_user(**fields)
 
     def __str__(self) -> str:
-        return f"{self.uuid}: {self.first_name} {self.last_name}"
+        return f"{self.uuid}: {self.first_name} {self.surname}"
