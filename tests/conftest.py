@@ -2,6 +2,7 @@ import pytest
 
 from authentication.models import User
 
+
 # authentication app
 
 
@@ -22,14 +23,7 @@ def user_default_fields_fixture():
 
 
 @pytest.fixture
-def normal_user_fixture(user_default_fields_fixture) -> User:
+def user_fixture(user_default_fields_fixture) -> User:
     return User.objects.create_user(
-        "user@example.com", "some-password", **user_default_fields_fixture
-    )
-
-
-@pytest.fixture
-def admin_fixture(user_default_fields_fixture) -> User:
-    return User.objects.create_superuser(
         "user@example.com", "some-password", **user_default_fields_fixture
     )

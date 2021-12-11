@@ -4,22 +4,27 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import User
-from utils.validation import validate_post_data
-from utils.payload import ResponseType, create_response_payload, serialize_object
+from utils.payload import (
+    create_success_payload,
+    create_error_payload,
+)
 
 
 @csrf_exempt
 @require_POST
 def register_user(request):
     request_data = json.loads(request.body)
-    valid_data, missing_fields = validate_post_data(request_data, model=User)
+    valid_data, missing_fields = User.validate_post_data(request_data)
     if not valid_data:
-        return create_response_payload(ResponseType.FAIL, data=missing_fields)
+        return create_error_payload(missing_fields)
 
-    user = User.objects.create_user(**request_data)
-    return create_response_payload(
-        ResponseType.SUCCESS, data=serialize_object(user, User)
-    )
+    success, result = User.save_wrapper(request_data)
+    if success:
+        return create_success_payload(
+            result.serialize(), message="User created successfully."
+        )
+    else:
+        return create_error_payload(result)
 
 
 # @csrf_exempt

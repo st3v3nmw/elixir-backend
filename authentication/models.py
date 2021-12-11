@@ -9,30 +9,21 @@ from django.contrib.auth.models import (
 from phonenumber_field.modelfields import PhoneNumberField
 from django_countries.fields import CountryField
 
+from utils.models import BaseModel
+
 
 class CustomUserManager(BaseUserManager):
     use_in_migrations = True
 
-    def _create_user(self, email, password, **kwargs):
+    def create_user(self, email, password, **kwargs):
         email = self.normalize_email(email)
         user = self.model(email=email, **kwargs)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_user(self, email, password, **kwargs):
-        kwargs.setdefault("is_superuser", False)
-        return self._create_user(email, password, **kwargs)
 
-    def create_superuser(self, email, password, **kwargs):
-        kwargs.setdefault("is_superuser", True)
-        if kwargs.get("is_superuser") is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
-
-        return self._create_user(email, password, **kwargs)
-
-
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     class Gender(models.TextChoices):
         MALE = "MALE", "Male"
         FEMALE = "FEMALE", "Female"
@@ -76,15 +67,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = "user"
         verbose_name_plural = "users"
 
-    def __str__(self):
-        return self.get_full_name()
+    @classmethod
+    def create(cls, fields):
+        return User.objects.create_user(**fields)
 
-    @property
-    def is_staff(self):
-        return self.is_superuser
-
-    def get_full_name(self):
+    def __str__(self) -> str:
         return f"{self.first_name} {self.last_name}"
-
-    def get_short_name(self):
-        return self.first_name

@@ -1,27 +1,22 @@
 from enum import Enum
+from functools import partial
 
 from django.http import JsonResponse
 
 
 class ResponseType(str, Enum):
     SUCCESS = "success"
-    FAIL = "fail"
     ERROR = "error"
 
 
-def create_response_payload(response_type: ResponseType, data={}, message=""):
-    payload = {"status": response_type}
-    if response_type == ResponseType.SUCCESS or response_type == ResponseType.FAIL:
-        payload["data"] = data
-    else:
-        payload["message"] = message
-    print(payload)
-    return JsonResponse(payload)
+class ErrorCode(str, Enum):
+    FIELD_REQUIRED = "field_required"
+    UNIQUE_KEY_VIOLATION = "unique_key_violation"
 
 
-def serialize_object(object, model):
-    object = object.__dict__
-    result = {}
-    for field in model.SERIALIZATION_FIELDS:
-        result[field] = str(object[field])
-    return result
+def __create_response_payload(response_type: ResponseType, data, message=""):
+    return JsonResponse({"status": response_type, "data": data, "message": message})
+
+
+create_success_payload = partial(__create_response_payload, ResponseType.SUCCESS)
+create_error_payload = partial(__create_response_payload, ResponseType.ERROR)
