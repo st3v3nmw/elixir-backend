@@ -16,16 +16,19 @@ from common.payload import (
     create_error_payload,
 )
 from common.validation import validate_post_data
+from common.utils import require_server
 
 
 @csrf_exempt
 @require_POST
+@require_server("CORE")
 def register_user(request):
     return create(request, User)
 
 
 @csrf_exempt
 @require_POST
+@require_server("CORE")
 def login(request):
     is_valid, request_data, debug_data = validate_post_data(
         request.body, ["email", "password"]
@@ -65,6 +68,7 @@ def login(request):
 
 
 @require_GET
+@require_server("CORE")
 def public_key(request):
     return create_success_payload(
         {"algorithm": "RS384", "public_key": os.environ["JWT_PUBLIC_KEY"]}

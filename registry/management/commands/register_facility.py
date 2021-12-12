@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from registry.models import HealthFacility
+from common.utils import require_server
 
 
 class Command(BaseCommand):
@@ -20,6 +21,7 @@ class Command(BaseCommand):
         parser.add_argument("address", type=str)
         parser.add_argument("api_base_url", type=str)
 
+    @require_server("CORE")
     def handle(self, *args, **kwargs):
         fields = {
             "name": kwargs["name"],

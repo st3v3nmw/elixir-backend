@@ -14,6 +14,7 @@ class ErrorCode(str, Enum):
     UNIQUE_KEY_VIOLATION = "unique_key_violation"
     LOGIN_FAILED = "login_failed"
     DOES_NOT_EXIST = "does_not_exist"
+    UNAUTHORIZED = "unauthorized"
 
 
 def __create_response_payload(

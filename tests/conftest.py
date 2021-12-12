@@ -1,4 +1,7 @@
+import json
+
 import pytest
+from django.test import Client
 
 from authentication.models import User
 from registry.models import HealthFacility, HealthWorker, Tenure
@@ -27,6 +30,21 @@ def patient_fixture(patient_default_fields_fixture) -> User:
     )
 
 
+@pytest.fixture
+def patient_auth_token_fixture(patient_fixture) -> str:
+    client = Client()
+    response = client.post(
+        "/api/auth/login/",
+        {
+            "email": patient_fixture.email,
+            "password": "some-password",
+        },
+        content_type="application/json",
+    )
+    response_json = json.loads(response.content)
+    return response_json["data"]["token"]
+
+
 # registry app
 
 
@@ -41,7 +59,7 @@ def clinic_default_fields_fixture():
         "email": "felicity@example",
         "phone_number": "+254712345678",
         "address": "P.O. BOX 1 - 10100",
-        "api_base_url": "http://localhost/api",
+        "api_base_url": "http://localhost/api/",
     }
 
 
@@ -53,7 +71,7 @@ def clinic_fixture(clinic_default_fields_fixture) -> HealthFacility:
 @pytest.fixture
 def doctor_fixture() -> User:
     doctor_default_fields = {
-        "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
+        "uuid": "601e357c-91e5-4d28-b830-5462590adb3c",
         "first_name": "Jane",
         "surname": "Doe",
         "phone_number": "+254712345678",
@@ -64,6 +82,21 @@ def doctor_fixture() -> User:
     return User.objects.create_user(
         "jane@example.com", "some-password", **doctor_default_fields
     )
+
+
+@pytest.fixture
+def doctor_auth_token_fixture(doctor_fixture) -> str:
+    client = Client()
+    response = client.post(
+        "/api/auth/login/",
+        {
+            "email": doctor_fixture.email,
+            "password": "some-password",
+        },
+        content_type="application/json",
+    )
+    response_json = json.loads(response.content)
+    return response_json["data"]["token"]
 
 
 @pytest.fixture

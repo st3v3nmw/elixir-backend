@@ -8,22 +8,30 @@ from registry.models import HealthFacility
 
 
 @pytest.mark.django_db
-def test_list_facilities():
+def test_list_facilities(patient_auth_token_fixture):
     for _ in range(4):
         baker.make(HealthFacility)
 
     client = Client()
-    response_json = json.loads(client.get("/api/registry/facilities/").content)
+    response_json = json.loads(
+        client.get(
+            "/api/registry/facilities/",
+            HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
+        ).content
+    )
 
     assert response_json["status"] == "success"
     assert len(response_json["data"]) == 4
 
 
 @pytest.mark.django_db
-def test_get_facility(clinic_fixture):
+def test_get_facility(clinic_fixture, patient_auth_token_fixture):
     client = Client()
     response_json = json.loads(
-        client.get(f"/api/registry/facilities/{clinic_fixture.uuid}/").content
+        client.get(
+            f"/api/registry/facilities/{clinic_fixture.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
+        ).content
     )
 
     assert response_json == {
@@ -37,7 +45,7 @@ def test_get_facility(clinic_fixture):
             "email": "felicity@example",
             "phone_number": "+254712345678",
             "address": "P.O. BOX 1 - 10100",
-            "api_base_url": "http://localhost/api",
+            "api_base_url": "http://localhost/api/",
             "date_joined": response_json["data"]["date_joined"],
             "is_active": True,
         },
@@ -46,24 +54,44 @@ def test_get_facility(clinic_fixture):
 
 
 @pytest.mark.django_db
-def test_register_health_worker(doctor_fixture):
+def test_get_facility_error404(patient_auth_token_fixture):
+    client = Client()
+    response_json = json.loads(
+        client.get(
+            "/api/registry/facilities/c8db9bda-c4cb-4c8e-a343-d19ea17f4875/",
+            HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
+        ).content
+    )
+
+    assert response_json == {
+        "status": "error",
+        "data": {},
+        "message": "does_not_exist",
+    }
+
+
+@pytest.mark.django_db
+def test_register_health_worker(health_worker_fixture, doctor_auth_token_fixture):
     client = Client()
 
     response = client.post(
         "/api/registry/workers/new/",
         {
-            "user_id": doctor_fixture.uuid,
+            "user_id": "601e357c-91e5-4d28-b830-5462590adb3c",
             "type": "DOCTOR",
         },
+        HTTP_AUTHORIZATION=f"Bearer {doctor_auth_token_fixture}",
         content_type="application/json",
     )
     response_json = json.loads(response.content)
+
+    print(response_json)
 
     assert response_json == {
         "status": "success",
         "data": {
             "uuid": response_json["data"]["uuid"],
-            "user_id": doctor_fixture.uuid,
+            "user_id": "601e357c-91e5-4d28-b830-5462590adb3c",
             "type": "DOCTOR",
             "employment_history": [],
         },
@@ -72,7 +100,9 @@ def test_register_health_worker(doctor_fixture):
 
 
 @pytest.mark.django_db
-def test_register_tenure(health_worker_fixture, clinic_fixture):
+def test_register_tenure(
+    health_worker_fixture, clinic_fixture, doctor_auth_token_fixture
+):
     client = Client()
 
     response = client.post(
@@ -82,10 +112,10 @@ def test_register_tenure(health_worker_fixture, clinic_fixture):
             "facility_id": clinic_fixture.uuid,
             "start": "2011-01-01",
         },
+        HTTP_AUTHORIZATION=f"Bearer {doctor_auth_token_fixture}",
         content_type="application/json",
     )
     response_json = json.loads(response.content)
-    print(response_json)
 
     assert response_json == {
         "status": "success",
@@ -100,14 +130,18 @@ def test_register_tenure(health_worker_fixture, clinic_fixture):
 
 
 @pytest.mark.django_db
-def test_get_health_worker(health_worker_fixture, tenure_fixture):
+def test_get_health_worker(
+    health_worker_fixture, tenure_fixture, patient_auth_token_fixture
+):
     client = Client()
 
     response_json = json.loads(
-        client.get(f"/api/registry/workers/{health_worker_fixture.uuid}/").content
+        client.get(
+            f"/api/registry/workers/{health_worker_fixture.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
+        ).content
     )
 
-    print(response_json)
     assert response_json == {
         "status": "success",
         "data": {

@@ -29,6 +29,7 @@ class BaseModel(models.Model):
         try:
             obj = cls.create(fields)
         except IntegrityError as e:
+            print(e)
             # TODO: Handle this better
             # 1. Unique Key Violation
             # 2. FK not present (i.e. inserting to HealthWorker with a non-existent user_id)
