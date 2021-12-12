@@ -10,7 +10,7 @@ def test_registration_endpoint_missing_fields() -> None:
     client = Client()
 
     response = client.post(
-        "/api/auth/register",
+        "/api/auth/register/",
         {
             "email": "adelaide@example.com",
             "first_name": "Adelaide",
@@ -38,13 +38,13 @@ def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> No
     patient_default_fields_fixture["email"] = "john@example.com"
     patient_default_fields_fixture["password"] = "some-password"
     response = client.post(
-        "/api/auth/register",
+        "/api/auth/register/",
         patient_default_fields_fixture,
         content_type="application/json",
     )
     response_json = json.loads(response.content)
     patient_default_fields_fixture["date_joined"] = response_json["data"]["date_joined"]
-    patient_default_fields_fixture["is_active"] = "True"
+    patient_default_fields_fixture["is_active"] = True
     patient_default_fields_fixture.pop("password")
     assert response_json == {
         "status": "success",
@@ -55,7 +55,7 @@ def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> No
     # attempt to register user with the same data
     patient_default_fields_fixture["password"] = "some-password"
     response = client.post(
-        "/api/auth/register",
+        "/api/auth/register/",
         patient_default_fields_fixture,
         content_type="application/json",
     )
@@ -73,7 +73,7 @@ def test_login_endpoint(patient_fixture):
 
     # login failure
     response = client.post(
-        "/api/auth/login",
+        "/api/auth/login/",
         {
             "email": "john@example.com",
             "password": "wrong-password",
@@ -89,7 +89,7 @@ def test_login_endpoint(patient_fixture):
 
     # login success
     response = client.post(
-        "/api/auth/login",
+        "/api/auth/login/",
         {
             "email": "john@example.com",
             "password": "some-password",
@@ -109,6 +109,6 @@ def test_login_endpoint(patient_fixture):
 
 def test_get_public_key():
     client = Client()
-    response_json = json.loads(client.get("/api/auth/public-key").content)
+    response_json = json.loads(client.get("/api/auth/public-key/").content)
     assert response_json["data"]["algorithm"] == "RS384"
     assert response_json["data"]["public_key"] == os.environ["JWT_PUBLIC_KEY"]

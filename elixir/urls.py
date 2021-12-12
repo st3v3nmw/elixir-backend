@@ -1,5 +1,9 @@
 from django.urls import path, include
 
+from common.views import error404
+
+handler404 = error404
+
 urlpatterns = [
     path(
         "api/",

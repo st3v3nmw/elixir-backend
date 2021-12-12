@@ -23,9 +23,7 @@ def register_user(request):
         request.body, User.VALIDATION_FIELDS
     )
     if not is_valid:
-        return create_error_payload(
-            data=debug_data["data"], message=debug_data["message"]
-        )
+        return create_error_payload(debug_data["data"], message=debug_data["message"])
 
     success, result = User.save_wrapper(request_data)
     if success:
@@ -72,7 +70,7 @@ def login(request):
 
 
 @require_GET
-def public_key(_):
+def public_key(request):
     return create_success_payload(
         {"algorithm": "RS384", "public_key": os.environ["JWT_PUBLIC_KEY"]}
     )

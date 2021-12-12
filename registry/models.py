@@ -32,6 +32,7 @@ class HealthFacility(Entity):
     ]
 
     def clean(self) -> None:
+        # TODO
         if self.county not in REGIONS[self.region]:
             raise ValidationError(
                 f"{self.county} does not belong to the {self.region} region"
@@ -39,18 +40,29 @@ class HealthFacility(Entity):
         return super().clean()
 
 
-class HealthWorker(models.Model):
+class HealthWorker(BaseModel):
     HEALTH_WORKER_TYPES = BaseModel.preprocess_choices(HEALTH_WORKER_TYPES)
 
-    user = models.ForeignKey(User, on_delete=models.RESTRICT)
+    user = models.OneToOneField(User, on_delete=models.RESTRICT)
     type = models.CharField(
         "Health Worker Type", choices=HEALTH_WORKER_TYPES, max_length=32
     )
-    employment_history = models.ManyToManyField(HealthFacility, through="Tenure")
+
+    VALIDATION_FIELDS = ["user_id", "type"]
+    SERIALIZATION_FIELDS = ["uuid"] + VALIDATION_FIELDS + ["employment_history"]
 
 
-class Tenure(models.Model):
-    health_worker = models.ForeignKey(HealthWorker, on_delete=models.RESTRICT)
+class Tenure(BaseModel):
+    health_worker = models.ForeignKey(
+        HealthWorker, related_name="employment_history", on_delete=models.RESTRICT
+    )
     facility = models.ForeignKey(HealthFacility, on_delete=models.RESTRICT)
     start = models.DateTimeField("Tenure Start", default=timezone.now)
     end = models.DateTimeField("Tenure End", null=True)
+
+    VALIDATION_FIELDS = ["health_worker_id", "facility_id", "start"]
+    SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
+
+    class Meta:
+        unique_together = ("health_worker", "facility", "start")
+        ordering = ["-start"]

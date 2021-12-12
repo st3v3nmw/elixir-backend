@@ -49,9 +49,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     )
 
     class Meta:
-        ordering = ["date_joined"]
-        verbose_name = "user"
-        verbose_name_plural = "users"
+        ordering = ["-date_joined"]
 
     @classmethod
     def create(cls, fields):

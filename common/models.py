@@ -7,15 +7,32 @@ from django.core.validators import RegexValidator
 from common.payload import ErrorCode
 
 
-class BaseModel:
+class BaseModel(models.Model):
+
     VALIDATION_FIELDS = []
     SERIALIZATION_FIELDS = []
+
+    uuid = models.UUIDField(
+        "Universally Unique IDentifier",
+        unique=True,
+        default=uuid.uuid4,
+        editable=False,
+        primary_key=True,
+    )
+
+    @classmethod
+    def create(cls, fields):
+        return cls.objects.create(**fields)
 
     @classmethod
     def save_wrapper(cls, fields):
         try:
             obj = cls.create(fields)
         except IntegrityError as e:
+            # TODO: Handle this better
+            # 1. Unique Key Violation
+            # 2. FK not present (i.e. inserting to HealthWorker with a non-existent user_id)
+            # 3. Key already exists, 1?
             extract_field_name_regex = r"Key \((?P<field_name>[_a-z]+)\)=\("
             match = re.search(extract_field_name_regex, e.__cause__.diag.message_detail)
             field_name = match.group("field_name")
@@ -32,25 +49,27 @@ class BaseModel:
         return result
 
     def serialize(self):
-        object = self.__dict__
         result = {}
         for field in self.SERIALIZATION_FIELDS:
-            result[field] = str(object[field])
+            obj = getattr(self, field)
+            if isinstance(obj, (bool, str, int)) or obj is None:
+                result[field] = obj
+            elif isinstance(obj, models.Manager):
+                result[field] = [x.serialize() for x in obj.all()]
+            elif isinstance(obj, BaseModel):
+                result[field] = obj.serialize()
+            else:
+                result[field] = str(obj)
         return result
 
+    class Meta:
+        abstract = True
 
-class Entity(models.Model, BaseModel):
+
+class Entity(BaseModel):
     phone_regex = RegexValidator(
         regex=r"^\+254\d{9}$",
         message="Phone number must be entered in the format: '+254712345678'.",
-    )
-
-    uuid = models.UUIDField(
-        "Universally Unique IDentifier",
-        unique=True,
-        default=uuid.uuid4,
-        editable=False,
-        primary_key=True,
     )
 
     email = models.EmailField("Email Address", unique=True)

@@ -39,7 +39,7 @@ def test_get_facility(clinic_fixture):
             "address": "P.O. BOX 1 - 10100",
             "api_base_url": "http://localhost/api",
             "date_joined": json_response["data"]["date_joined"],
-            "is_active": "True",
+            "is_active": True,
         },
         "message": "",
     }
