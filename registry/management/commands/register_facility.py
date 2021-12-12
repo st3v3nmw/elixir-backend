@@ -20,7 +20,7 @@ class Command(BaseCommand):
         parser.add_argument("address", type=str)
         parser.add_argument("api_base_url", type=str)
 
-    def handle(self, *_, **kwargs):
+    def handle(self, *args, **kwargs):
         fields = {
             "name": kwargs["name"],
             "region": kwargs["region"],

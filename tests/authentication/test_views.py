@@ -6,7 +6,7 @@ import pytest
 from django.test import Client
 
 
-def test_registration_endpoint_missing_fields() -> None:
+def test_user_registration_endpoint_missing_fields() -> None:
     client = Client()
 
     response = client.post(
@@ -32,7 +32,7 @@ def test_registration_endpoint_missing_fields() -> None:
 
 
 @pytest.mark.django_db
-def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> None:
+def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) -> None:
     client = Client()
 
     patient_default_fields_fixture["email"] = "john@example.com"
@@ -49,7 +49,7 @@ def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> No
     assert response_json == {
         "status": "success",
         "data": patient_default_fields_fixture,
-        "message": "User created successfully.",
+        "message": "Created successfully.",
     }
 
     # attempt to register user with the same data
@@ -68,7 +68,7 @@ def test_registration_endpoint_proper_data(patient_default_fields_fixture) -> No
 
 
 @pytest.mark.django_db
-def test_login_endpoint(patient_fixture):
+def test_patient_login(patient_fixture):
     client = Client()
 
     # login failure
@@ -104,7 +104,29 @@ def test_login_endpoint(patient_fixture):
         algorithms=[response_json["data"]["algorithm"]],
     )
     assert decoded_token["sub"] == patient_fixture.uuid
-    assert decoded_token["roles"] == "Patient"
+    assert decoded_token["roles"] == "PATIENT"
+
+
+@pytest.mark.django_db
+def test_doctor_login_roles(doctor_fixture, health_worker_fixture):
+    client = Client()
+    response = client.post(
+        "/api/auth/login/",
+        {
+            "email": "jane@example.com",
+            "password": "some-password",
+        },
+        content_type="application/json",
+    )
+    response_json = json.loads(response.content)
+    assert response_json["status"] == "success"
+    decoded_token = jwt.decode(
+        response_json["data"]["token"],
+        response_json["data"]["public_key"],
+        algorithms=[response_json["data"]["algorithm"]],
+    )
+    assert decoded_token["sub"] == doctor_fixture.uuid
+    assert decoded_token["roles"] == "PATIENT HEALTH_WORKER"
 
 
 def test_get_public_key():

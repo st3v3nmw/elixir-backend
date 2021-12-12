@@ -1,7 +1,7 @@
 import pytest
 
 from authentication.models import User
-from registry.models import HealthFacility
+from registry.models import HealthFacility, HealthWorker, Tenure
 
 
 # authentication app
@@ -48,3 +48,34 @@ def clinic_default_fields_fixture():
 @pytest.fixture
 def clinic_fixture(clinic_default_fields_fixture) -> HealthFacility:
     return HealthFacility.objects.create(**clinic_default_fields_fixture)
+
+
+@pytest.fixture
+def doctor_fixture() -> User:
+    doctor_default_fields = {
+        "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
+        "first_name": "Jane",
+        "surname": "Doe",
+        "phone_number": "+254712345678",
+        "national_id": "67890",
+        "gender": "FEMALE",
+        "date_of_birth": "1990-12-12",
+    }
+    return User.objects.create_user(
+        "jane@example.com", "some-password", **doctor_default_fields
+    )
+
+
+@pytest.fixture
+def health_worker_fixture(doctor_fixture) -> HealthWorker:
+    return HealthWorker.objects.create(user=doctor_fixture, type="DOCTOR")
+
+
+@pytest.fixture
+def tenure_fixture(health_worker_fixture, clinic_fixture) -> Tenure:
+    return Tenure.objects.create(
+        health_worker=health_worker_fixture,
+        facility=clinic_fixture,
+        start="2011-01-01",
+        end="2013-11-05",
+    )

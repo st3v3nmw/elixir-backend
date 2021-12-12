@@ -57,8 +57,8 @@ class Tenure(BaseModel):
         HealthWorker, related_name="employment_history", on_delete=models.RESTRICT
     )
     facility = models.ForeignKey(HealthFacility, on_delete=models.RESTRICT)
-    start = models.DateTimeField("Tenure Start", default=timezone.now)
-    end = models.DateTimeField("Tenure End", null=True)
+    start = models.DateField("Tenure Start", default=timezone.now)
+    end = models.DateField("Tenure End", null=True)
 
     VALIDATION_FIELDS = ["health_worker_id", "facility_id", "start"]
     SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
