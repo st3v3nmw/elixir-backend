@@ -4,6 +4,7 @@ import pytest
 from django.test import Client
 from model_bakery import baker
 
+from authentication.models import User
 from registry.models import HealthFacility
 
 
@@ -74,10 +75,12 @@ def test_get_facility_error404(patient_auth_token_fixture):
 def test_register_health_worker(health_worker_fixture, doctor_auth_token_fixture):
     client = Client()
 
+    doc2 = baker.make(User)
+
     response = client.post(
         "/api/registry/workers/new/",
         {
-            "user_id": "601e357c-91e5-4d28-b830-5462590adb3c",
+            "user_id": str(doc2.uuid),
             "type": "DOCTOR",
         },
         HTTP_AUTHORIZATION=f"Bearer {doctor_auth_token_fixture}",
@@ -85,13 +88,11 @@ def test_register_health_worker(health_worker_fixture, doctor_auth_token_fixture
     )
     response_json = json.loads(response.content)
 
-    print(response_json)
-
     assert response_json == {
         "status": "success",
         "data": {
             "uuid": response_json["data"]["uuid"],
-            "user_id": "601e357c-91e5-4d28-b830-5462590adb3c",
+            "user_id": str(doc2.uuid),
             "type": "DOCTOR",
             "employment_history": [],
         },

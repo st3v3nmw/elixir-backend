@@ -30,8 +30,6 @@ class LoginRequiredMiddleware:
 
         token = request.META.get("HTTP_AUTHORIZATION")
 
-        print(token)
-
         if token is None:
             return create_error_payload({}, message=ErrorCode.UNAUTHORIZED, status=401)
 
@@ -42,14 +40,10 @@ class LoginRequiredMiddleware:
         except jwt.exceptions.DecodeError:
             return create_error_payload({}, message=ErrorCode.UNAUTHORIZED, status=401)
 
-        print(decoded_token)
-
         tokens_roles = decoded_token["roles"].split(" ")
         for required_role in required_roles:
             if required_role in tokens_roles:
                 request.token = decoded_token
                 return None
-
-        print("yey")
 
         return create_error_payload({}, message=ErrorCode.UNAUTHORIZED, status=401)
