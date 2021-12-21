@@ -18,7 +18,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1"]
+ALLOWED_HOSTS = [os.environ["SERVER_IP"], "127.0.0.1"]
 
 ADMIN_ENABLED = False
 

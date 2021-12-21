@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 sudo apt update
-sudo apt install -y nginx curl
+sudo apt install -y nginx curl tmux
 
 # Setup Python
 sudo apt install -y python3-pip libpq-dev build-essential libssl-dev libffi-dev python3-dev
