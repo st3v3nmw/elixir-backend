@@ -3,6 +3,7 @@ python-dotenv
 
 # Web
 Django
+django-cors-headers
 
 # Database
 psycopg2-binary

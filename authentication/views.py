@@ -58,8 +58,7 @@ def login(request):
         return create_success_payload(
             {
                 "token": token,
-                "algorithm": "RS384",
-                "public_key": os.environ["JWT_PUBLIC_KEY"],
+                "user": user.serialize()
             },
             message="Login successful.",
         )
