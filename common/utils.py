@@ -16,12 +16,10 @@ def parametrized(dec):
 
 
 @parametrized
-def require_server(fn, site_type):
+def require_service(fn, service):
     def wrapper(*args, **kwargs):
-        if os.environ["SITE_TYPE"] != site_type:
-            raise Exception(
-                f"This service is not supported on this site ({os.environ['SITE_TYPE']})."
-            )
+        if service not in os.environ["SERVICES"]:
+            raise Exception(f"{service} not supported on this server.")
         return fn(*args, **kwargs)
 
     return wrapper

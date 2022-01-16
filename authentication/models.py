@@ -43,9 +43,11 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
         "phone_number",
     ]
 
-    VALIDATION_FIELDS = [USERNAME_FIELD, "password"] + REQUIRED_FIELDS
+    POST_REQUIRED_FIELDS = [USERNAME_FIELD, "password"] + REQUIRED_FIELDS
     SERIALIZATION_FIELDS = (
-        ["uuid", USERNAME_FIELD] + REQUIRED_FIELDS + ["date_joined", "is_active"]
+        ["uuid", USERNAME_FIELD]
+        + REQUIRED_FIELDS
+        + ["records", "date_joined", "is_active"]
     )
 
     class Meta:

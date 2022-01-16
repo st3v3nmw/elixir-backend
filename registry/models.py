@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from authentication.models import User
 from common.models import BaseModel, Entity
@@ -66,3 +67,27 @@ class Tenure(BaseModel):
     class Meta:
         unique_together = ("health_worker", "facility", "start")
         ordering = ["-start"]
+
+
+class Record(BaseModel):
+    owner = models.ForeignKey(Tenure, related_name="records", on_delete=models.RESTRICT)
+    patient = models.ForeignKey(User, related_name="records", on_delete=models.RESTRICT)
+    # doctrine of professional discretion
+    released = models.BooleanField("Released?", default=True)
+
+    VALIDATION_FIELDS = ["uuid", "owner_id", "patient_id", "released"]
+    SERIALIZATION_FIELDS = ["uuid", "owner", "patient_id", "released", "ratings"]
+
+
+class RecordRating(BaseModel):
+    record = models.ForeignKey(
+        Record, related_name="ratings", on_delete=models.RESTRICT
+    )
+    rater = models.ForeignKey(User, related_name="ratings", on_delete=models.RESTRICT)
+    rating = models.FloatField(
+        "Rating", validators=[MinValueValidator(1.0), MaxValueValidator(10.0)]
+    )
+    review = models.TextField("Record Review")
+
+    VALIDATION_FIELDS = ["record_id", "rater_id", "rating", "review"]
+    SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater"]

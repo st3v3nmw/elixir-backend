@@ -9,7 +9,7 @@ from common.payload import ErrorCode
 
 class BaseModel(models.Model):
 
-    VALIDATION_FIELDS = []
+    POST_REQUIRED_FIELDS = []
     SERIALIZATION_FIELDS = []
 
     uuid = models.UUIDField(

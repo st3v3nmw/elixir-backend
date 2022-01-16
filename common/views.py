@@ -4,7 +4,7 @@ from common.validation import validate_post_data
 
 def create(request, model):
     is_valid, request_data, debug_data = validate_post_data(
-        request.body, model.VALIDATION_FIELDS
+        request.body, model.POST_REQUIRED_FIELDS
     )
     if not is_valid:
         return create_error_payload(debug_data["data"], message=debug_data["message"])

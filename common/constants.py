@@ -43,10 +43,22 @@ REGIONS = {
 COUNTIES = reduce(lambda x, y: x + y, REGIONS.values(), [])
 
 HEALTH_WORKER_TYPES = [
-    "Doctor",
+    "Physician",
     "Nurse",
     "Lab Technician",
     "Surgeon",
     "Pharmacist",
     "Dentist",
+    "Optician",
+]
+
+VISIT_TYPES = ["Outpatient", "Inpatient", "Dental", "Optical"]
+ENCOUNTER_STATUS = [
+    "Planned",
+    "Arrived",
+    "Triaged",
+    "In Progress",
+    "Onleave",
+    "Finished",
+    "Cancelled",
 ]

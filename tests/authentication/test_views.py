@@ -100,11 +100,12 @@ def test_patient_login(patient_fixture):
     assert response_json["status"] == "success"
     decoded_token = jwt.decode(
         response_json["data"]["token"],
-        response_json["data"]["public_key"],
-        algorithms=[response_json["data"]["algorithm"]],
+        os.environ["JWT_PUBLIC_KEY"],
+        algorithms=["RS384"],
     )
     assert decoded_token["sub"] == patient_fixture.uuid
     assert decoded_token["roles"] == "PATIENT"
+    assert response_json["data"]["user"] == patient_fixture.serialize()
 
 
 @pytest.mark.django_db
@@ -122,8 +123,8 @@ def test_doctor_login_roles(doctor_fixture, health_worker_fixture):
     assert response_json["status"] == "success"
     decoded_token = jwt.decode(
         response_json["data"]["token"],
-        response_json["data"]["public_key"],
-        algorithms=[response_json["data"]["algorithm"]],
+        os.environ["JWT_PUBLIC_KEY"],
+        algorithms=["RS384"],
     )
     assert decoded_token["sub"] == doctor_fixture.uuid
     assert decoded_token["roles"] == "PATIENT HEALTH_WORKER"
