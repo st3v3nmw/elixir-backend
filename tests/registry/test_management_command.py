@@ -12,9 +12,9 @@ def test_registry_facility(clinic_default_fields_fixture):
     call_command(
         "register_facility",
         fields["name"],
-        fields["region"],
         fields["county"],
         fields["location"],
+        fields["type"],
         fields["email"],
         fields["phone_number"],
         fields["address"],
@@ -29,9 +29,9 @@ def test_registry_facility(clinic_default_fields_fixture):
     call_command(
         "register_facility",
         fields["name"],
-        fields["region"],
         fields["county"],
         fields["location"],
+        fields["type"],
         fields["email"],
         fields["phone_number"],
         fields["address"],

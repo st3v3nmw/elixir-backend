@@ -32,7 +32,7 @@ class BaseModel(models.Model):
             print(e)
             # TODO: Handle this better
             # 1. Unique Key Violation
-            # 2. FK not present (i.e. inserting to HealthWorker with a non-existent user_id)
+            # 2. FK not present (i.e. inserting to Practitioner with a non-existent user_id)
             # 3. Key already exists, 1?
             extract_field_name_regex = r"Key \((?P<field_name>[_a-z]+)\)=\("
             match = re.search(extract_field_name_regex, e.__cause__.diag.message_detail)

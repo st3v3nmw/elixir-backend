@@ -1,17 +1,20 @@
 import csv
 
+from tqdm import tqdm
+
 from facility.models import LOINC
 
 # Data obtained from
 # https://loinc.org/downloads/loinc-table/
-SOURCE_CSV = "data/LoincTableCore.csv"
+SOURCE_CSV = "facility/scripts/data/LoincTableCore.csv"
 
 
-def populate_table():
+def run():
+    print(f"Populating LOINC table from {SOURCE_CSV}...")
     with open(SOURCE_CSV, "r") as f:
-        csv_reader = csv.DictReader(f)
-        for row in csv_reader:
-            code, _ = LOINC.get_or_create(
+        rows = list(csv.DictReader(f))
+        for row in tqdm(rows):
+            LOINC.objects.get_or_create(
                 code=row["LOINC_NUM"].strip(),
                 component=row["COMPONENT"].strip(),
                 attribute=row["PROPERTY"].strip(),
@@ -22,8 +25,3 @@ def populate_table():
                 long_common_name=row["LONG_COMMON_NAME"].strip(),
                 status=row["STATUS"].strip(),
             )
-            print(f"Processed LOINC Code {code}.")
-
-
-if __name__ == "__main__":
-    populate_table()

@@ -1,22 +1,21 @@
 import csv
 
+from tqdm import tqdm
+
 from facility.models import HCPCS
 
 # Data obtained from
 # https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets/Alpha-Numeric-HCPCS-Items/2020-Alpha-Numeric-HCPCS-File
-SOURCE_CSV = "data/HCPC2020_ANWEB_w_disclaimer.csv"
+SOURCE_CSV = "facility/scripts/data/HCPC2020_ANWEB_w_disclaimer.csv"
 
 
-def populate_table():
+def run():
+    print(f"Populating HCPCS table from {SOURCE_CSV}...")
     with open(SOURCE_CSV, "r") as f:
-        csv_reader = csv.DictReader(f)
-        for row in csv_reader:
-            code, _ = HCPCS.get_or_create(
+        rows = list(csv.DictReader(f))
+        for row in tqdm(rows):
+            HCPCS.objects.get_or_create(
                 code=row["HCPC"].strip(),
+                seq_num=row["SEQNUM"].strip(),
                 description=row["LONG DESCRIPTION"].strip(),
             )
-            print(f"Processed HCPCS Code {code}.")
-
-
-if __name__ == "__main__":
-    populate_table()

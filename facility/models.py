@@ -37,6 +37,18 @@ class LOINC(BaseModel):
     long_common_name = models.TextField("Long Common Name")
     status = models.CharField("Status", choices=LOINC_STATUS, max_length=16)
 
+    SERIALIZATION_FIELDS = [
+        "code",
+        "component",
+        "attribute",
+        "timing",
+        "system",
+        "scale",
+        "method",
+        "long_common_name",
+        "status",
+    ]
+
     @property
     def fully_specified_name(self) -> str:
         return (
@@ -81,13 +93,17 @@ class HCPCS(BaseModel):
     Useful for billing.
     """
 
-    code = models.CharField("HCPCS Code", max_length=16, unique=True)
+    code = models.CharField("HCPCS Code", max_length=16)
+    seq_num = models.CharField("Sequence Number", max_length=8, default="0010")
     description = models.TextField("Description")
 
     SERIALIZATION_FIELDS = ["code", "description"]
 
+    class Meta:
+        unique_together = ("code", "seq_num")
+
     def __str__(self) -> str:
-        return f"{self.code} {self.description} ({self.uuid})"
+        return f"{self.code}:{self.seq_num} {self.description} ({self.uuid})"
 
 
 class RxTerm(BaseModel):
@@ -101,8 +117,10 @@ class RxTerm(BaseModel):
     code = models.CharField("RXCUI", max_length=16, unique=True)
     name = models.TextField("Display Name")
     route = models.CharField("Route", max_length=64)
-    strength = models.CharField("Strength", max_length=64)
+    strength = models.CharField("Strength", max_length=256)
     form = models.CharField("Form", max_length=64)
+
+    SERIALIZATION_FIELDS = ["code", "name", "route", "strength", "form"]
 
     def __str__(self):
         return f"{self.name} {self.strength} {self.form} ({self.uuid})"
@@ -120,8 +138,8 @@ class Visit(BaseModel):
     start = models.DateTimeField("Visit Start", auto_now_add=True)
     end = models.DateTimeField("Visit End", null=True)
     primary_diagnosis = models.ForeignKey(to=ICD10, on_delete=models.RESTRICT)
-    secondary_diagnoses = ArrayField(
-        models.ForeignKey(to=ICD10, on_delete=models.RESTRICT)
+    secondary_diagnoses = models.ManyToManyField(
+        to=ICD10, related_name="secondary_diagnoses"
     )
     invoice_number = models.CharField("Invoice Number", max_length=32)
     invoice_attachment = models.FileField(upload_to="attachments/")
@@ -176,6 +194,7 @@ class Encounter(BaseModel):
     POST_REQUIRED_FIELDS = [
         "author_id",
         "visit_id",
+        "status",
         "type",
         "start",
         "end",
@@ -185,7 +204,7 @@ class Encounter(BaseModel):
 
     @property
     def total_amount(self):
-        return sum(line.total for line in self.invoice_lines) + sum(
+        return sum(line.total for line in self.charge_items) + sum(
             line.total for line in self.prescriptions
         )
 
@@ -200,8 +219,8 @@ class Observation(BaseModel):
     POST_REQUIRED_FIELDS = ["loinc_id", "encounter_id", "result"]
 
 
-class AbstractInvoiceLine(BaseModel):
-    unit_price = models.DecimalField("Unit Price")
+class AbstractChargeItem(BaseModel):
+    unit_price = models.DecimalField("Unit Price", decimal_places=2, max_digits=10)
     quantity = models.IntegerField("Quantity")
     paid = models.BooleanField("Paid?", default=False)
 
@@ -213,21 +232,39 @@ class AbstractInvoiceLine(BaseModel):
         abstract = True
 
 
-class InvoiceLine(AbstractInvoiceLine):
+class ChargeItem(AbstractChargeItem):
     encounter = models.ForeignKey(
-        to=Encounter, related_name="invoice_lines", on_delete=models.RESTRICT
+        to=Encounter, related_name="charge_items", on_delete=models.RESTRICT
     )
     item = models.ForeignKey(to=HCPCS, on_delete=models.RESTRICT)
 
     POST_REQUIRED_FIELDS = ["encounter_id", "item_id", "unit_price", "quantity", "paid"]
 
 
-class Prescription(AbstractInvoiceLine):
+class Prescription(AbstractChargeItem):
     encounter = models.ForeignKey(
         to=Encounter, related_name="prescriptions", on_delete=models.RESTRICT
     )
     drug = models.ForeignKey(to=RxTerm, on_delete=models.RESTRICT)
-    frequency = models.CharField("Frequency")
-    duration = models.CharField("Duration")
+    description = models.TextField("Description")
+    frequency = models.IntegerField("Frequency")
+    duration = models.CharField(
+        "Duration",
+        choices=[
+            ("HOUR", "Hour"),
+            ("DAY", "Day"),
+            ("WEEK", "Week"),
+            ("MONTH", "Month"),
+            ("YEAR", "Year"),
+        ],
+        max_length=8,
+    )
 
-    POST_REQUIRED_FIELDS = ["encounter_id", "drug_id", "frequency", "duration", "paid"]
+    POST_REQUIRED_FIELDS = [
+        "encounter_id",
+        "drug_id",
+        "description",
+        "frequency",
+        "duration",
+        "paid",
+    ]

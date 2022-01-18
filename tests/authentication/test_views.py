@@ -109,7 +109,7 @@ def test_patient_login(patient_fixture):
 
 
 @pytest.mark.django_db
-def test_doctor_login_roles(doctor_fixture, health_worker_fixture):
+def test_doctor_login_roles(doctor_fixture, practitioner_fixture):
     client = Client()
     response = client.post(
         "/api/auth/login/",
@@ -127,7 +127,7 @@ def test_doctor_login_roles(doctor_fixture, health_worker_fixture):
         algorithms=["RS384"],
     )
     assert decoded_token["sub"] == doctor_fixture.uuid
-    assert decoded_token["roles"] == "PATIENT HEALTH_WORKER"
+    assert decoded_token["roles"] == "PATIENT PRACTITIONER DOCTOR"
 
 
 def test_get_public_key():

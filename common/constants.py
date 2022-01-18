@@ -42,7 +42,12 @@ REGIONS = {
 
 COUNTIES = reduce(lambda x, y: x + y, REGIONS.values(), [])
 
-HEALTH_WORKER_TYPES = [
+counties_to_regions_map = {}
+for region, counties in REGIONS.items():
+    for county in counties:
+        counties_to_regions_map[county] = region
+
+PRACTITIONER_TYPES = [
     "Physician",
     "Nurse",
     "Lab Technician",

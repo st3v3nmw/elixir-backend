@@ -1,21 +1,37 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from authentication.models import User
 from common.models import BaseModel, Entity
-from common.constants import REGIONS, COUNTIES, HEALTH_WORKER_TYPES
+from common.constants import (
+    REGIONS,
+    COUNTIES,
+    PRACTITIONER_TYPES,
+    counties_to_regions_map,
+)
 
 
-class HealthFacility(Entity):
+class Facility(Entity):
     REGIONS = BaseModel.preprocess_choices(REGIONS)
     COUNTIES = BaseModel.preprocess_choices(COUNTIES)
+    # http://www.hl7.org/fhir/v3/ServiceDeliveryLocationRoleType/vs.html
+    FACILITY_TYPES = [
+        ("HOSP", "Hospital"),
+        ("PSY", "Psychiatry Clinic"),
+        ("RH", "Rehabilitation Hospital"),
+        ("MBL", "Medical Laboratory"),
+        ("PHARM", "Pharmacy"),
+        ("PEDC", "Pediatrics Clinic"),
+        ("OPTC", "Optometry Clinic"),
+        ("DENT", "Dental Clinic"),
+    ]
 
     name = models.CharField("Name", max_length=128)
     region = models.CharField("Region", choices=REGIONS, max_length=32)
     county = models.CharField("County", choices=COUNTIES, max_length=32)
     location = models.TextField("Detailed Location")
+    type = models.CharField("Type", choices=FACILITY_TYPES, max_length=32)
     api_base_url = models.URLField("API Base URL")
 
     SERIALIZATION_FIELDS = [
@@ -24,6 +40,7 @@ class HealthFacility(Entity):
         "region",
         "county",
         "location",
+        "type",
         "email",
         "phone_number",
         "address",
@@ -32,21 +49,17 @@ class HealthFacility(Entity):
         "is_active",
     ]
 
-    def clean(self) -> None:
-        # TODO
-        if self.county not in REGIONS[self.region]:
-            raise ValidationError(
-                f"{self.county} does not belong to the {self.region} region"
-            )
-        return super().clean()
+    @property
+    def region(self):
+        return counties_to_regions_map[self.county]
 
 
-class HealthWorker(BaseModel):
-    HEALTH_WORKER_TYPES = BaseModel.preprocess_choices(HEALTH_WORKER_TYPES)
+class Practitioner(BaseModel):
+    PRACTITIONER_TYPES = BaseModel.preprocess_choices(PRACTITIONER_TYPES)
 
     user = models.OneToOneField(User, on_delete=models.RESTRICT)
     type = models.CharField(
-        "Health Worker Type", choices=HEALTH_WORKER_TYPES, max_length=32
+        "Practitioner Type", choices=PRACTITIONER_TYPES, max_length=32
     )
 
     VALIDATION_FIELDS = ["user_id", "type"]
@@ -54,18 +67,18 @@ class HealthWorker(BaseModel):
 
 
 class Tenure(BaseModel):
-    health_worker = models.ForeignKey(
-        HealthWorker, related_name="employment_history", on_delete=models.RESTRICT
+    practitioner = models.ForeignKey(
+        Practitioner, related_name="employment_history", on_delete=models.RESTRICT
     )
-    facility = models.ForeignKey(HealthFacility, on_delete=models.RESTRICT)
+    facility = models.ForeignKey(Facility, on_delete=models.RESTRICT)
     start = models.DateField("Tenure Start", default=timezone.now)
     end = models.DateField("Tenure End", null=True)
 
-    VALIDATION_FIELDS = ["health_worker_id", "facility_id", "start"]
+    VALIDATION_FIELDS = ["practitioner_id", "facility_id", "start"]
     SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
 
     class Meta:
-        unique_together = ("health_worker", "facility", "start")
+        unique_together = ("practitioner", "facility", "start")
         ordering = ["-start"]
 
 

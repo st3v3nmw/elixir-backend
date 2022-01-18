@@ -24,5 +24,11 @@ sudo -u postgres psql -c "ALTER ROLE elixir_user SET timezone TO 'UTC';";
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE elixir TO elixir_user;"
 ./manage.py migrate
 
+# Populate coding tables
+./manage.py runscript populate_HCPCS_table
+./manage.py runscript populate_ICD10_table
+./manage.py runscript populate_LOINC_table
+./manage.py runscript populate_RxTerms_table
+
 # Static
 ./manage.py collectstatic

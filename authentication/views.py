@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
 from .models import User
-from registry.models import HealthWorker
+from registry.models import Practitioner
 from common.views import create
 from common.payload import (
     ErrorCode,
@@ -42,9 +42,13 @@ def login(request):
     if user is not None:
         now = timezone.now()
         roles = ["PATIENT"]
-        # check if user is a healthworker
-        if HealthWorker.objects.filter(user=user).exists():
-            roles.append("HEALTH_WORKER")
+        # check if user is a practitioner
+        try:
+            practitioner = Practitioner.objects.get(user=user)
+            roles.append("PRACTITIONER")
+            roles.append(practitioner.type)
+        except Practitioner.DoesNotExist:
+            pass
 
         claims = {
             "sub": str(user.uuid),
@@ -56,10 +60,7 @@ def login(request):
         }
         token = jwt.encode(claims, os.environ["JWT_PRIVATE_KEY"], algorithm="RS384")
         return create_success_payload(
-            {
-                "token": token,
-                "user": user.serialize()
-            },
+            {"token": token, "user": user.serialize()},
             message="Login successful.",
         )
     else:
@@ -76,11 +77,14 @@ def public_key(request):
 
 # @csrf_exempt
 # @require_POST
+# @require_service("AUTH")
 # def reset_password(request):
 #     pass
 
 
+# @require_roles(["PATIENT", "PRACTITIONER"])
 # @csrf_exempt
 # @require_POST
+# @require_service("AUTH")
 # def change_password(request):
 #     pass

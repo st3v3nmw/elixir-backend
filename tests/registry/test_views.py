@@ -5,13 +5,13 @@ from django.test import Client
 from model_bakery import baker
 
 from authentication.models import User
-from registry.models import HealthFacility
+from registry.models import Facility
 
 
 @pytest.mark.django_db
 def test_list_facilities(patient_auth_token_fixture):
     for _ in range(4):
-        baker.make(HealthFacility)
+        baker.make(Facility)
 
     client = Client()
     response_json = json.loads(
@@ -72,7 +72,7 @@ def test_get_facility_error404(patient_auth_token_fixture):
 
 
 @pytest.mark.django_db
-def test_register_health_worker(health_worker_fixture, doctor_auth_token_fixture):
+def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
     client = Client()
 
     doc2 = baker.make(User)
@@ -102,14 +102,14 @@ def test_register_health_worker(health_worker_fixture, doctor_auth_token_fixture
 
 @pytest.mark.django_db
 def test_register_tenure(
-    health_worker_fixture, clinic_fixture, doctor_auth_token_fixture
+    practitioner_fixture, clinic_fixture, doctor_auth_token_fixture
 ):
     client = Client()
 
     response = client.post(
         "/api/registry/workers/tenures/new/",
         {
-            "health_worker_id": health_worker_fixture.uuid,
+            "practitioner_id": practitioner_fixture.uuid,
             "facility_id": clinic_fixture.uuid,
             "start": "2011-01-01",
         },
@@ -131,14 +131,14 @@ def test_register_tenure(
 
 
 @pytest.mark.django_db
-def test_get_health_worker(
-    health_worker_fixture, tenure_fixture, patient_auth_token_fixture
+def test_get_practitioner(
+    practitioner_fixture, tenure_fixture, patient_auth_token_fixture
 ):
     client = Client()
 
     response_json = json.loads(
         client.get(
-            f"/api/registry/workers/{health_worker_fixture.uuid}/",
+            f"/api/registry/workers/{practitioner_fixture.uuid}/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )
@@ -147,7 +147,7 @@ def test_get_health_worker(
         "status": "success",
         "data": {
             "uuid": response_json["data"]["uuid"],
-            "user_id": health_worker_fixture.user_id,
+            "user_id": practitioner_fixture.user_id,
             "type": "DOCTOR",
             "employment_history": [
                 {

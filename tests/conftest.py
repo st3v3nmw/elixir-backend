@@ -4,7 +4,7 @@ import pytest
 from django.test import Client
 
 from authentication.models import User
-from registry.models import HealthFacility, HealthWorker, Tenure
+from registry.models import Facility, Practitioner, Tenure
 
 
 # authentication app
@@ -53,9 +53,9 @@ def clinic_default_fields_fixture():
     return {
         "uuid": "35d7d0c0-5126-4823-85bc-607e1ef3bfda",
         "name": "Felicity Clinic",
-        "region": "NAIROBI",
         "county": "NAIROBI",
         "location": "1 Rosslyn Close",
+        "type": "HOSP",
         "email": "felicity@example",
         "phone_number": "+254712345678",
         "address": "P.O. BOX 1 - 10100",
@@ -64,8 +64,8 @@ def clinic_default_fields_fixture():
 
 
 @pytest.fixture
-def clinic_fixture(clinic_default_fields_fixture) -> HealthFacility:
-    return HealthFacility.objects.create(**clinic_default_fields_fixture)
+def clinic_fixture(clinic_default_fields_fixture) -> Facility:
+    return Facility.objects.create(**clinic_default_fields_fixture)
 
 
 @pytest.fixture
@@ -100,14 +100,14 @@ def doctor_auth_token_fixture(doctor_fixture) -> str:
 
 
 @pytest.fixture
-def health_worker_fixture(doctor_fixture) -> HealthWorker:
-    return HealthWorker.objects.create(user=doctor_fixture, type="DOCTOR")
+def practitioner_fixture(doctor_fixture) -> Practitioner:
+    return Practitioner.objects.create(user=doctor_fixture, type="PHYSICIAN")
 
 
 @pytest.fixture
-def tenure_fixture(health_worker_fixture, clinic_fixture) -> Tenure:
+def tenure_fixture(practitioner_fixture, clinic_fixture) -> Tenure:
     return Tenure.objects.create(
-        health_worker=health_worker_fixture,
+        practitioner=practitioner_fixture,
         facility=clinic_fixture,
         start="2011-01-01",
         end="2013-11-05",
