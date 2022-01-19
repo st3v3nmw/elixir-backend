@@ -1,5 +1,8 @@
 from functools import reduce
 
+from common.models import BaseModel
+
+
 GENDERS = ["Male", "Female"]
 
 REGIONS = {
@@ -44,8 +47,9 @@ COUNTIES = reduce(lambda x, y: x + y, REGIONS.values(), [])
 
 counties_to_regions_map = {}
 for region, counties in REGIONS.items():
+    counties = BaseModel.preprocess_choices(counties)
     for county in counties:
-        counties_to_regions_map[county] = region
+        counties_to_regions_map[county[0]] = region
 
 PRACTITIONER_TYPES = [
     "Physician",

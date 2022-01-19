@@ -40,8 +40,9 @@ def test_get_facility(clinic_fixture, patient_auth_token_fixture):
         "data": {
             "uuid": "35d7d0c0-5126-4823-85bc-607e1ef3bfda",
             "name": "Felicity Clinic",
-            "region": "NAIROBI",
             "county": "NAIROBI",
+            "region": "Nairobi",
+            "type": "HOSP",
             "location": "1 Rosslyn Close",
             "email": "felicity@example",
             "phone_number": "+254712345678",
@@ -78,10 +79,10 @@ def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
     doc2 = baker.make(User)
 
     response = client.post(
-        "/api/registry/workers/new/",
+        "/api/registry/practitioners/new/",
         {
             "user_id": str(doc2.uuid),
-            "type": "DOCTOR",
+            "type": "PHYSICIAN",
         },
         HTTP_AUTHORIZATION=f"Bearer {doctor_auth_token_fixture}",
         content_type="application/json",
@@ -93,7 +94,7 @@ def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
         "data": {
             "uuid": response_json["data"]["uuid"],
             "user_id": str(doc2.uuid),
-            "type": "DOCTOR",
+            "type": "PHYSICIAN",
             "employment_history": [],
         },
         "message": "Created successfully.",
@@ -107,7 +108,7 @@ def test_register_tenure(
     client = Client()
 
     response = client.post(
-        "/api/registry/workers/tenures/new/",
+        "/api/registry/practitioners/tenures/new/",
         {
             "practitioner_id": practitioner_fixture.uuid,
             "facility_id": clinic_fixture.uuid,
@@ -138,7 +139,7 @@ def test_get_practitioner(
 
     response_json = json.loads(
         client.get(
-            f"/api/registry/workers/{practitioner_fixture.uuid}/",
+            f"/api/registry/practitioners/{practitioner_fixture.uuid}/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )
@@ -148,7 +149,7 @@ def test_get_practitioner(
         "data": {
             "uuid": response_json["data"]["uuid"],
             "user_id": practitioner_fixture.user_id,
-            "type": "DOCTOR",
+            "type": "PHYSICIAN",
             "employment_history": [
                 {
                     "uuid": str(tenure_fixture.uuid),

@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from common.constants import ENCOUNTER_STATUS, VISIT_TYPES
 
 from common.models import BaseModel

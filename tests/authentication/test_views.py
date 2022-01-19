@@ -46,6 +46,7 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
     patient_default_fields_fixture["date_joined"] = response_json["data"]["date_joined"]
     patient_default_fields_fixture["is_active"] = True
     patient_default_fields_fixture.pop("password")
+    patient_default_fields_fixture["records"] = []
     assert response_json == {
         "status": "success",
         "data": patient_default_fields_fixture,
@@ -54,11 +55,13 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
 
     # attempt to register user with the same data
     patient_default_fields_fixture["password"] = "some-password"
+    patient_default_fields_fixture.pop("records")
     response = client.post(
         "/api/auth/register/",
         patient_default_fields_fixture,
         content_type="application/json",
     )
+    patient_default_fields_fixture["records"] = []
     response_json = json.loads(response.content)
     assert response_json == {
         "status": "error",
@@ -109,7 +112,7 @@ def test_patient_login(patient_fixture):
 
 
 @pytest.mark.django_db
-def test_doctor_login_roles(doctor_fixture, practitioner_fixture):
+def test_physician_login_roles(doctor_fixture, practitioner_fixture):
     client = Client()
     response = client.post(
         "/api/auth/login/",
@@ -127,7 +130,7 @@ def test_doctor_login_roles(doctor_fixture, practitioner_fixture):
         algorithms=["RS384"],
     )
     assert decoded_token["sub"] == doctor_fixture.uuid
-    assert decoded_token["roles"] == "PATIENT PRACTITIONER DOCTOR"
+    assert decoded_token["roles"] == "PATIENT PRACTITIONER PHYSICIAN"
 
 
 def test_get_public_key():
