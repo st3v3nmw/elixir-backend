@@ -13,6 +13,8 @@ from common.constants import (
 )
 from django.contrib.postgres.fields import ArrayField
 
+from common.utils import ci_lower_bound
+
 # Health Facility
 
 
@@ -93,7 +95,9 @@ class Tenure(BaseModel):
 
 
 class Record(BaseModel):
-    owner = models.ForeignKey(Tenure, related_name="records", on_delete=models.RESTRICT)
+    facility = models.ForeignKey(
+        Facility, related_name="records", on_delete=models.RESTRICT
+    )
     patient = models.ForeignKey(User, related_name="records", on_delete=models.RESTRICT)
     creation_time = models.DateTimeField("Creation time at facility")
     # doctrine of professional discretion
@@ -116,15 +120,24 @@ class Record(BaseModel):
         "consent_requests",
     ]
 
+    @property
+    def rating(self):
+        n_ratings = self.ratings.objects.all().count()
+        n_positive_accurate = self.ratings.objects.filter(is_accurate=True).count()
+        n_positive_complete = self.ratings.objects.filter(is_complete=True).count()
+        return (
+            ci_lower_bound(n_positive_accurate, n_ratings, 0.96)
+            + ci_lower_bound(n_positive_complete, n_ratings, 0.96)
+        ) / 2
+
 
 class RecordRating(BaseModel):
     record = models.ForeignKey(
         Record, related_name="ratings", on_delete=models.RESTRICT
     )
     rater = models.ForeignKey(User, related_name="ratings", on_delete=models.RESTRICT)
-    rating = models.FloatField(
-        "Rating", validators=[MinValueValidator(1.0), MaxValueValidator(10.0)]
-    )
+    is_accurate = models.BooleanField("Accurate?")
+    is_complete = models.BooleanField("Complete?")
     review = models.TextField("Record Review")
 
     POST_REQUIRED_FIELDS = ["record_id", "rater_id", "rating", "review"]
