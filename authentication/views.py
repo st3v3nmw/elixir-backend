@@ -69,7 +69,7 @@ def login(request):
 
 @require_GET
 @require_service("AUTH")
-def public_key(request):
+def get_public_key(request):
     return create_success_payload(
         {"algorithm": "RS384", "public_key": os.environ["JWT_PUBLIC_KEY"]}
     )

@@ -8,8 +8,12 @@ from common.constants import (
     REGIONS,
     COUNTIES,
     PRACTITIONER_TYPES,
+    CONSENT_REQUEST_STATUSES,
     counties_to_regions_map,
 )
+from django.contrib.postgres.fields import ArrayField
+
+# Health Facility
 
 
 class Facility(Entity):
@@ -54,6 +58,9 @@ class Facility(Entity):
         return counties_to_regions_map[self.county]
 
 
+# Practitioner
+
+
 class Practitioner(BaseModel):
     PRACTITIONER_TYPES = BaseModel.preprocess_choices(PRACTITIONER_TYPES)
 
@@ -82,14 +89,32 @@ class Tenure(BaseModel):
         ordering = ["-start"]
 
 
+# Records
+
+
 class Record(BaseModel):
     owner = models.ForeignKey(Tenure, related_name="records", on_delete=models.RESTRICT)
     patient = models.ForeignKey(User, related_name="records", on_delete=models.RESTRICT)
+    creation_time = models.DateTimeField("Creation time at facility")
     # doctrine of professional discretion
     released = models.BooleanField("Released?", default=True)
 
-    VALIDATION_FIELDS = ["uuid", "owner_id", "patient_id", "released"]
-    SERIALIZATION_FIELDS = ["uuid", "owner", "patient_id", "released", "ratings"]
+    POST_REQUIRED_FIELDS = [
+        "uuid",
+        "owner_id",
+        "patient_id",
+        "creation_time",
+        "released",
+    ]
+    SERIALIZATION_FIELDS = [
+        "uuid",
+        "owner",
+        "patient_id",
+        "released",
+        "creation_time",
+        "ratings",
+        "consent_requests",
+    ]
 
 
 class RecordRating(BaseModel):
@@ -102,5 +127,75 @@ class RecordRating(BaseModel):
     )
     review = models.TextField("Record Review")
 
-    VALIDATION_FIELDS = ["record_id", "rater_id", "rating", "review"]
+    POST_REQUIRED_FIELDS = ["record_id", "rater_id", "rating", "review"]
     SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater"]
+
+
+class ConsentRequest(BaseModel):
+    CONSENT_REQUEST_STATUSES = BaseModel.preprocess_choices(CONSENT_REQUEST_STATUSES)
+
+    records = models.ManyToManyField(to=Record, related_name="consent_requests")
+    visit_types = ArrayField(
+        models.CharField(
+            choices=[
+                ("OUTPATIENT", "Outpatient"),
+                ("INPATIENT", "Inpatient"),
+                ("OPTICAL", "Optical"),
+                ("DENTAL", "Dental"),
+            ],
+            max_length=16,
+        )
+    )
+    practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
+    request_note = models.TextField("Request Note")
+    status = models.TextField(
+        "Consent Request Status", choices=CONSENT_REQUEST_STATUSES, max_length=16
+    )
+
+    POST_REQUIRED_FIELDS = [
+        "records",
+        "visit_types",
+        "practitioner",
+        "request_note",
+        "status",
+    ]
+    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["transition_logs"]
+
+
+class ConsentRequestTransition(BaseModel):
+    consent_request = models.ForeignKey(
+        ConsentRequest, related_name="transition_logs", on_delete=models.RESTRICT
+    )
+    from_state = models.TextField(
+        "From State",
+        choices=[("DRAFT", "Draft"), ("PENDING", "Pending"), ("APPROVED", "Approved")],
+        max_length=16,
+    )
+    to_state = models.TextField(
+        "To State",
+        choices=[
+            ("APPROVED", "Approved"),
+            ("REJECTED", "Rejected"),
+            ("WITHDRAWN", "Withdrawn"),
+        ],
+        max_length=16,
+    )
+    transition_time = models.DateTimeField("Transition Time", auto_now_add=True)
+
+    SERIALIZATION_FIELDS = [
+        "consent_request_id",
+        "from_state",
+        "to_state",
+        "transition_time",
+    ]
+
+
+class AccessLog(BaseModel):
+    record = models.ForeignKey(
+        Record, related_name="access_logs", on_delete=models.RESTRICT
+    )
+    practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
+    access_time = models.DateTimeField("Access Time")
+
+    POST_REQUESTED_FIELDS = ["record_id", "practitioner_id", "access_time"]
+    SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS

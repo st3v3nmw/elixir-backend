@@ -61,6 +61,8 @@ PRACTITIONER_TYPES = [
     "Optician",
 ]
 
+CONSENT_REQUEST_STATUSES = ["Draft", "Pending", "Approved", "Rejected", "Withdrawn"]
+
 VISIT_TYPES = ["Outpatient", "Inpatient", "Dental", "Optical"]
 ENCOUNTER_STATUS = [
     "Planned",

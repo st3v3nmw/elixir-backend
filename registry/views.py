@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
+from authentication.models import User
 from .models import Facility, Practitioner, Tenure, Record, RecordRating
 from common.payload import create_success_payload
 from common.utils import require_service
@@ -15,18 +16,17 @@ from common.middlewares import require_roles
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
 @require_service("REGISTRY")
-def list_facilities(request):
-    facilities = Facility.objects.all()
-    data = [facility.serialize() for facility in facilities]
-    return create_success_payload(data)
+def get_facility(request, pk):
+    facility = get_object_or_404(Facility, uuid=pk)
+    return create_success_payload(facility.serialize())
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
 @require_service("REGISTRY")
-def get_facility(request, pk):
-    facility = get_object_or_404(Facility, uuid=pk)
-    return create_success_payload(facility.serialize())
+def list_facilities(request):
+    facilities = Facility.objects.all()
+    return create_success_payload([facility.serialize() for facility in facilities])
 
 
 # Practitioner
@@ -76,9 +76,16 @@ def create_rating(request):
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
-@csrf_exempt
 @require_GET
 @require_service("REGISTRY")
-def get_record(request, pk):
-    record = get_object_or_404(Record, pk=pk)
+def get_record(request, doc_id):
+    record = get_object_or_404(Record, pk=doc_id)
     return create_success_payload(record.serialize())
+
+
+@require_roles(["PATIENT", "PRACTITIONER"])
+@require_GET
+@require_service("REGISTRY")
+def list_records(request, user_id):
+    records = Record.objects.filter(user_id=user_id)
+    return create_success_payload([record.serialize() for record in records])

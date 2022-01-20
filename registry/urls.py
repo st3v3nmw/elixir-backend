@@ -10,5 +10,6 @@ urlpatterns = [
     path("practitioners/tenures/new/", views.register_tenure),
     path("records/new/", views.create_record),
     path("records/ratings/new/", views.create_rating),
-    path("records/<uuid:pk>/", views.get_record),
+    path("records/<uuid:doc_id>/", views.get_record),
+    path("records/users/<uuid:user_id>", views.list_records),
 ]
