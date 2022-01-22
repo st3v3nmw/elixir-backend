@@ -23,13 +23,11 @@ class CustomUserManager(BaseUserManager):
 class User(AbstractBaseUser, Entity, PermissionsMixin):
     GENDERS = BaseModel.preprocess_choices(GENDERS)
 
-    first_name = models.CharField("First Name", max_length=32)
-    surname = models.CharField("Last Name", max_length=32)
-    national_id = models.CharField(
-        "National ID Number", blank=True, null=True, max_length=32, unique=True
-    )
-    gender = models.CharField("Gender", choices=GENDERS, max_length=6)
-    date_of_birth = models.DateField("Date of Birth")
+    first_name = models.CharField(max_length=32)
+    surname = models.CharField(max_length=32)
+    national_id = models.CharField(null=True, max_length=32, unique=True)
+    gender = models.CharField(choices=GENDERS, max_length=6)
+    date_of_birth = models.DateField()
     relatives = models.ManyToManyField(
         "self",
         through="NextOfKin",
@@ -72,7 +70,6 @@ class NextOfKin(models.Model):
         User, related_name="next_of_kin", on_delete=models.CASCADE
     )
     relationship = models.CharField(
-        "User's relationship to next of kin",
         choices=[
             ("SPOUSE", "Spouse"),
             ("CHILD", "Child"),
@@ -82,7 +79,7 @@ class NextOfKin(models.Model):
         ],
         max_length=16,
     )
-    can_consent = models.BooleanField("Can consent on user's behalf?", default=False)
+    can_consent = models.BooleanField(default=False)
 
     POST_REQUIRED_FIELDS = ["user_id", "next_of_kin_id", "relationship", "can_consent"]
     SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS

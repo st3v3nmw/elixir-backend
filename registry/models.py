@@ -33,11 +33,10 @@ class Facility(Entity):
         ("DENT", "Dental Clinic"),
     ]
 
-    name = models.CharField("Name", max_length=128)
-    region = models.CharField("Region", choices=REGIONS, max_length=32)
-    county = models.CharField("County", choices=COUNTIES, max_length=32)
-    location = models.TextField("Detailed Location")
-    type = models.CharField("Type", choices=FACILITY_TYPES, max_length=32)
+    name = models.CharField(max_length=128)
+    county = models.CharField(choices=COUNTIES, max_length=32)
+    location = models.TextField()  # Detailed Location
+    type = models.CharField(choices=FACILITY_TYPES, max_length=32)
     api_base_url = models.URLField("API Base URL")
 
     SERIALIZATION_FIELDS = [
@@ -67,9 +66,7 @@ class Practitioner(BaseModel):
     PRACTITIONER_TYPES = BaseModel.preprocess_choices(PRACTITIONER_TYPES)
 
     user = models.OneToOneField(User, on_delete=models.RESTRICT)
-    type = models.CharField(
-        "Practitioner Type", choices=PRACTITIONER_TYPES, max_length=32
-    )
+    type = models.CharField(choices=PRACTITIONER_TYPES, max_length=32)
 
     VALIDATION_FIELDS = ["user_id", "type"]
     SERIALIZATION_FIELDS = ["uuid"] + VALIDATION_FIELDS + ["employment_history"]
@@ -80,8 +77,8 @@ class Tenure(BaseModel):
         Practitioner, related_name="employment_history", on_delete=models.RESTRICT
     )
     facility = models.ForeignKey(Facility, on_delete=models.RESTRICT)
-    start = models.DateField("Tenure Start", default=timezone.now)
-    end = models.DateField("Tenure End", null=True)
+    start = models.DateField(default=timezone.now)
+    end = models.DateField(null=True)
 
     VALIDATION_FIELDS = ["practitioner_id", "facility_id", "start"]
     SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
@@ -99,9 +96,9 @@ class Record(BaseModel):
         Facility, related_name="records", on_delete=models.RESTRICT
     )
     patient = models.ForeignKey(User, related_name="records", on_delete=models.RESTRICT)
-    creation_time = models.DateTimeField("Creation time at facility")
+    creation_time = models.DateTimeField()  # Creation time at facility
     # doctrine of professional discretion
-    released = models.BooleanField("Released?", default=True)
+    is_released = models.BooleanField(default=True)
 
     POST_REQUIRED_FIELDS = [
         "uuid",
@@ -135,10 +132,11 @@ class RecordRating(BaseModel):
     record = models.ForeignKey(
         Record, related_name="ratings", on_delete=models.RESTRICT
     )
+    encounter = models.UUIDField()
     rater = models.ForeignKey(User, related_name="ratings", on_delete=models.RESTRICT)
-    is_accurate = models.BooleanField("Accurate?")
-    is_complete = models.BooleanField("Complete?")
-    review = models.TextField("Record Review")
+    is_accurate = models.BooleanField()
+    is_complete = models.BooleanField()
+    review = models.TextField()
 
     POST_REQUIRED_FIELDS = ["record_id", "rater_id", "rating", "review"]
     SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater"]
@@ -160,10 +158,8 @@ class ConsentRequest(BaseModel):
         )
     )
     practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
-    request_note = models.TextField("Request Note")
-    status = models.TextField(
-        "Consent Request Status", choices=CONSENT_REQUEST_STATUSES, max_length=16
-    )
+    request_note = models.TextField()
+    status = models.TextField(choices=CONSENT_REQUEST_STATUSES, max_length=16)
 
     POST_REQUIRED_FIELDS = [
         "records",
@@ -180,12 +176,10 @@ class ConsentRequestTransition(BaseModel):
         ConsentRequest, related_name="transition_logs", on_delete=models.RESTRICT
     )
     from_state = models.TextField(
-        "From State",
         choices=[("DRAFT", "Draft"), ("PENDING", "Pending"), ("APPROVED", "Approved")],
         max_length=16,
     )
     to_state = models.TextField(
-        "To State",
         choices=[
             ("APPROVED", "Approved"),
             ("REJECTED", "Rejected"),
@@ -193,7 +187,7 @@ class ConsentRequestTransition(BaseModel):
         ],
         max_length=16,
     )
-    transition_time = models.DateTimeField("Transition Time", auto_now_add=True)
+    transition_time = models.DateTimeField(auto_now_add=True)
 
     SERIALIZATION_FIELDS = [
         "consent_request_id",
@@ -208,7 +202,7 @@ class AccessLog(BaseModel):
         Record, related_name="access_logs", on_delete=models.RESTRICT
     )
     practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
-    access_time = models.DateTimeField("Access Time")
+    access_time = models.DateTimeField()
 
     POST_REQUESTED_FIELDS = ["record_id", "practitioner_id", "access_time"]
     SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS

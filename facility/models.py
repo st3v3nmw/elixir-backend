@@ -18,23 +18,23 @@ class LOINC(BaseModel):
         ["Active", "Deprecated", "Discouraged", "Trial"]
     )
 
-    code = models.CharField("LOINC Code", max_length=16, unique=True)
+    code = models.CharField(max_length=16, unique=True)
     # The substance or entity being measured or observed.
-    component = models.CharField("Component", max_length=256)
+    component = models.CharField(max_length=256)
     # The characteristic or attribute of the analyte.
-    attribute = models.CharField("Attribute/Property", max_length=32)
+    attribute = models.CharField(max_length=32)
     # The interval of time over which an observation was made.
-    timing = models.CharField("Timing", max_length=32)
+    timing = models.CharField(max_length=32)
     # The specimen or thing upon which the observation was made.
-    system = models.CharField("System", max_length=256)
+    system = models.CharField(max_length=256)
     # How the observation value is quantified or expressed: quantitative, ordinal, nominal.
-    scale = models.CharField("Scale", max_length=8)
+    scale = models.CharField(max_length=8)
     # OPTIONAL A high-level classification of how the observation was made.
     # Only needed when the technique affects the clinical interpretation of the results.
-    method = models.CharField("Method", max_length=256)
+    method = models.CharField(max_length=256)
     # Human friendly version of code
-    long_common_name = models.TextField("Long Common Name")
-    status = models.CharField("Status", choices=LOINC_STATUS, max_length=16)
+    long_common_name = models.TextField()
+    status = models.CharField(choices=LOINC_STATUS, max_length=16)
 
     SERIALIZATION_FIELDS = [
         "code",
@@ -60,8 +60,9 @@ class LOINC(BaseModel):
 
 
 class ICD10Category(BaseModel):
-    code = models.CharField("ICD10 Category", max_length=16, unique=True)
-    title = models.TextField("Category Title")
+    # category code
+    code = models.CharField(max_length=16, unique=True)
+    title = models.TextField()
 
     def __str__(self) -> str:
         return f"{self.code} {self.title} ({self.uuid})"
@@ -75,8 +76,8 @@ class ICD10(BaseModel):
     """
 
     category = models.ForeignKey(to=ICD10Category, on_delete=models.RESTRICT)
-    code = models.CharField("Diagnosis Code", max_length=16, unique=True)
-    description = models.TextField("Diagnosis Description")
+    code = models.CharField(max_length=16, unique=True)
+    description = models.TextField()
 
     SERIALIZATION_FIELDS = ["code", "description", "category"]
 
@@ -92,9 +93,10 @@ class HCPCS(BaseModel):
     Useful for billing.
     """
 
-    code = models.CharField("HCPCS Code", max_length=16)
-    seq_num = models.CharField("Sequence Number", max_length=8, default="0010")
-    description = models.TextField("Description")
+    # HCPCS Code
+    code = models.CharField(max_length=16)
+    seq_num = models.CharField(max_length=8, default="0010")
+    description = models.TextField()
 
     SERIALIZATION_FIELDS = ["code", "description"]
 
@@ -113,11 +115,11 @@ class RxTerm(BaseModel):
     https://lhncbc.nlm.nih.gov/MOR/RxTerms/
     """
 
-    code = models.CharField("RXCUI", max_length=16, unique=True)
-    name = models.TextField("Display Name")
-    route = models.CharField("Route", max_length=64)
-    strength = models.CharField("Strength", max_length=256)
-    form = models.CharField("Form", max_length=64)
+    code = models.CharField(max_length=16, unique=True)  # RXCUI
+    name = models.TextField()  # Display Name
+    route = models.CharField(max_length=64)
+    strength = models.CharField(max_length=256)
+    form = models.CharField(max_length=64)
 
     SERIALIZATION_FIELDS = ["code", "name", "route", "strength", "form"]
 
@@ -131,19 +133,19 @@ class RxTerm(BaseModel):
 class Visit(BaseModel):
     VISIT_TYPES = BaseModel.preprocess_choices(VISIT_TYPES)
 
-    patient_id = models.UUIDField("Patient UUID")
-    facility_id = models.UUIDField("Health Facility UUID")
-    type = models.CharField("Visit Type", choices=VISIT_TYPES, max_length=16)
-    start = models.DateTimeField("Visit Start", auto_now_add=True)
-    end = models.DateTimeField("Visit End", null=True)
+    patient_id = models.UUIDField()
+    facility_id = models.UUIDField()
+    type = models.CharField(choices=VISIT_TYPES, max_length=16)
+    start = models.DateTimeField(auto_now_add=True)
+    end = models.DateTimeField(null=True)
     primary_diagnosis = models.ForeignKey(to=ICD10, on_delete=models.RESTRICT)
     secondary_diagnoses = models.ManyToManyField(
         to=ICD10, related_name="secondary_diagnoses"
     )
-    invoice_number = models.CharField("Invoice Number", max_length=32)
+    invoice_number = models.CharField(max_length=32)
     invoice_attachment = models.FileField(upload_to="attachments/")
 
-    synced = models.BooleanField("Synced with record registry?", default=False)
+    is_synced = models.BooleanField(default=False)
 
     POST_REQUIRED_FIELDS = [
         "patient_id",
@@ -179,15 +181,15 @@ class Encounter(BaseModel):
         ("VR", "Virtual"),
     ]
 
-    author_id = models.UUIDField("Author's Tenure UUID")
+    author_id = models.UUIDField()  # Author's Tenure UUID
     visit = models.ForeignKey(
         to=Visit, related_name="encounters", on_delete=models.RESTRICT
     )
-    status = models.CharField("Status", choices=ENCOUNTER_STATUS, max_length=16)
-    type = models.CharField("Type", choices=ENCOUNTER_CLASSES, max_length=8)
-    start = models.DateTimeField("Visit Start", auto_now_add=True)
-    end = models.DateTimeField("Visit End", null=True)
-    clinical_notes = models.TextField("Clinical Notes")
+    status = models.CharField(choices=ENCOUNTER_STATUS, max_length=16)
+    type = models.CharField(choices=ENCOUNTER_CLASSES, max_length=8)
+    start = models.DateTimeField(auto_now_add=True)
+    end = models.DateTimeField(null=True)
+    clinical_notes = models.TextField()
     attachment = models.FileField(upload_to="attachments/")
 
     POST_REQUIRED_FIELDS = [
@@ -219,9 +221,9 @@ class Observation(BaseModel):
 
 
 class AbstractChargeItem(BaseModel):
-    unit_price = models.DecimalField("Unit Price", decimal_places=2, max_digits=10)
-    quantity = models.IntegerField("Quantity")
-    paid = models.BooleanField("Paid?", default=False)
+    unit_price = models.DecimalField(decimal_places=2, max_digits=10)
+    quantity = models.IntegerField()
+    is_paid = models.BooleanField(default=False)
 
     @property
     def total(self):
@@ -237,7 +239,13 @@ class ChargeItem(AbstractChargeItem):
     )
     item = models.ForeignKey(to=HCPCS, on_delete=models.RESTRICT)
 
-    POST_REQUIRED_FIELDS = ["encounter_id", "item_id", "unit_price", "quantity", "paid"]
+    POST_REQUIRED_FIELDS = [
+        "encounter_id",
+        "item_id",
+        "unit_price",
+        "quantity",
+        "is_paid",
+    ]
 
 
 class Prescription(AbstractChargeItem):
@@ -245,10 +253,9 @@ class Prescription(AbstractChargeItem):
         to=Encounter, related_name="prescriptions", on_delete=models.RESTRICT
     )
     drug = models.ForeignKey(to=RxTerm, on_delete=models.RESTRICT)
-    description = models.TextField("Description")
-    frequency = models.IntegerField("Frequency")
+    description = models.TextField()
+    frequency = models.IntegerField()
     duration = models.CharField(
-        "Duration",
         choices=[
             ("HOUR", "Hour"),
             ("DAY", "Day"),
@@ -265,5 +272,5 @@ class Prescription(AbstractChargeItem):
         "description",
         "frequency",
         "duration",
-        "paid",
+        "is_paid",
     ]

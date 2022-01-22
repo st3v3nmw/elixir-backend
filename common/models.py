@@ -13,11 +13,7 @@ class BaseModel(models.Model):
     SERIALIZATION_FIELDS = []
 
     uuid = models.UUIDField(
-        "Universally Unique IDentifier",
-        unique=True,
-        default=uuid.uuid4,
-        editable=False,
-        primary_key=True,
+        unique=True, default=uuid.uuid4, editable=False, primary_key=True
     )
 
     @classmethod
@@ -73,14 +69,12 @@ class Entity(BaseModel):
         message="Phone number must be entered in the format: '+254712345678'.",
     )
 
-    email = models.EmailField("Email Address", unique=True)
-    phone_number = models.CharField(
-        "Phone Number", validators=[phone_regex], max_length=13
-    )
-    address = models.TextField("Postal Address")
+    email = models.EmailField(unique=True)
+    phone_number = models.CharField(validators=[phone_regex], max_length=13)
+    address = models.TextField()
 
-    date_joined = models.DateTimeField("Date Joined", auto_now_add=True)
-    is_active = models.BooleanField("Is Active?", default=True)
+    date_joined = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         abstract = True
