@@ -1,10 +1,6 @@
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -18,7 +14,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = [os.environ["SERVER_IP"], "127.0.0.1"]
+ALLOWED_HOSTS = os.environ["SERVER_IP"].split(" ")
 
 ADMIN_ENABLED = False
 
@@ -36,7 +32,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_extensions",
     "authentication",
-    "registry",
+    "index",
     "facility",
 ]
 
@@ -80,9 +76,9 @@ CORS_ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8080"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.environ["DB_NAME"],
-        "USER": os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
+        "NAME": os.environ["POSTGRES_DB"],
+        "USER": os.environ["POSTGRES_USER"],
+        "PASSWORD": os.environ["POSTGRES_PASSWORD"],
         "HOST": os.environ["DB_HOST"],
         "PORT": os.environ["DB_PORT"],
     }
@@ -134,3 +130,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom Models
 AUTH_USER_MODEL = "authentication.User"
+
+# JWT keys
+with open(f"/usr/app/jwt{os.environ['SERVER_NAME']}RS384.key", "r") as f:
+    os.environ["JWT_PRIVATE_KEY"] = f.read()
+with open(f"/usr/app/jwt{os.environ['SERVER_NAME']}RS384.key.pub", "r") as f:
+    os.environ["JWT_PUBLIC_KEY"] = f.read()

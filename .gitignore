@@ -130,4 +130,5 @@ dmypy.json
 
 # Other
 .vscode/
-elixir/static/
+*.key
+*.key.pub

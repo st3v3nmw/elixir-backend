@@ -1,25 +1,13 @@
-# Environment variables
-python-dotenv
-
-# Web
-Django
+cryptography
+Django==4.0.1
 django-cors-headers
 django-extensions
-
-# Database
-psycopg2-binary
-
-# Authentication
-cryptography
-pyjwt
-
-# Testing
 flake8
-model_bakery
-pytest
+model_bakery==1.4.0
+psycopg2-binary
+PyJWT==2.3.0
+pytest==6.2.5
 pytest-django
 pytest-cov
-
-# Utils
-tqdm
-scipy
+python-dotenv==0.19.2
+tqdm==4.62.3

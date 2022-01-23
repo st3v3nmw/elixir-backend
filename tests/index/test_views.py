@@ -5,7 +5,7 @@ from django.test import Client
 from model_bakery import baker
 
 from authentication.models import User
-from registry.models import Facility
+from index.models import Facility
 
 
 @pytest.mark.django_db
@@ -16,7 +16,7 @@ def test_list_facilities(patient_auth_token_fixture):
     client = Client()
     response_json = json.loads(
         client.get(
-            "/api/registry/facilities/",
+            "/api/index/facilities/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )
@@ -30,7 +30,7 @@ def test_get_facility(clinic_fixture, patient_auth_token_fixture):
     client = Client()
     response_json = json.loads(
         client.get(
-            f"/api/registry/facilities/{clinic_fixture.uuid}/",
+            f"/api/index/facilities/{clinic_fixture.uuid}/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )
@@ -60,7 +60,7 @@ def test_get_facility_error404(patient_auth_token_fixture):
     client = Client()
     response_json = json.loads(
         client.get(
-            "/api/registry/facilities/c8db9bda-c4cb-4c8e-a343-d19ea17f4875/",
+            "/api/index/facilities/c8db9bda-c4cb-4c8e-a343-d19ea17f4875/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )
@@ -79,7 +79,7 @@ def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
     doc2 = baker.make(User)
 
     response = client.post(
-        "/api/registry/practitioners/new/",
+        "/api/index/practitioners/new/",
         {
             "user_id": str(doc2.uuid),
             "type": "PHYSICIAN",
@@ -108,7 +108,7 @@ def test_register_tenure(
     client = Client()
 
     response = client.post(
-        "/api/registry/practitioners/tenures/new/",
+        "/api/index/practitioners/tenures/new/",
         {
             "practitioner_id": practitioner_fixture.uuid,
             "facility_id": clinic_fixture.uuid,
@@ -139,7 +139,7 @@ def test_get_practitioner(
 
     response_json = json.loads(
         client.get(
-            f"/api/registry/practitioners/{practitioner_fixture.uuid}/",
+            f"/api/index/practitioners/{practitioner_fixture.uuid}/",
             HTTP_AUTHORIZATION=f"Bearer {patient_auth_token_fixture}",
         ).content
     )

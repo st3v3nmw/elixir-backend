@@ -1,11 +1,11 @@
 from django.core.management.base import BaseCommand
 
-from registry.models import Facility
+from index.models import Facility
 from common.utils import require_service
 
 
 class Command(BaseCommand):
-    help = "Adds a health facility to the registry"
+    help = "Adds a health facility to the index"
 
     def add_arguments(self, parser) -> None:
         parser.add_argument("name", type=str)
@@ -21,7 +21,7 @@ class Command(BaseCommand):
         parser.add_argument("address", type=str)
         parser.add_argument("api_base_url", type=str)
 
-    @require_service("REGISTRY")
+    @require_service("INDEX")
     def handle(self, *args, **kwargs):
         fields = {
             "name": kwargs["name"],

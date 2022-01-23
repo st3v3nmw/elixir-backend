@@ -4,7 +4,7 @@ import pytest
 from django.test import Client
 
 from authentication.models import User
-from registry.models import Facility, Practitioner, Tenure
+from index.models import Facility, Practitioner, Tenure
 
 
 # authentication app
@@ -45,7 +45,7 @@ def patient_auth_token_fixture(patient_fixture) -> str:
     return response_json["data"]["token"]
 
 
-# registry app
+# index app
 
 
 @pytest.fixture

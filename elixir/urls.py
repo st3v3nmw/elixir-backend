@@ -10,7 +10,8 @@ urlpatterns = [
         include(
             [
                 path("auth/", include("authentication.urls")),
-                path("registry/", include("registry.urls")),
+                path("facility", include("facility.urls")),
+                path("index/", include("index.urls")),
             ]
         ),
     ),

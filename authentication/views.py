@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
 from .models import User
-from registry.models import Practitioner
+from index.models import Practitioner
 from common.views import create
 from common.payload import (
     ErrorCode,

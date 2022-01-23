@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from authentication.models import User
 from .models import Facility, Practitioner, Tenure, Record, RecordRating
 from common.payload import create_success_payload
 from common.utils import require_service
@@ -15,7 +14,7 @@ from common.middlewares import require_roles
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
-@require_service("REGISTRY")
+@require_service("INDEX")
 def get_facility(request, pk):
     facility = get_object_or_404(Facility, uuid=pk)
     return create_success_payload(facility.serialize())
@@ -23,7 +22,7 @@ def get_facility(request, pk):
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
-@require_service("REGISTRY")
+@require_service("INDEX")
 def list_facilities(request):
     facilities = Facility.objects.all()
     return create_success_payload([facility.serialize() for facility in facilities])
@@ -35,7 +34,7 @@ def list_facilities(request):
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("REGISTRY")
+@require_service("INDEX")
 def register_practitioner(request):
     return create(request, Practitioner)
 
@@ -43,14 +42,14 @@ def register_practitioner(request):
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("REGISTRY")
+@require_service("INDEX")
 def register_tenure(request):
     return create(request, Tenure)
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
-@require_service("REGISTRY")
+@require_service("INDEX")
 def get_practitioner(request, pk):
     practitioner = get_object_or_404(Practitioner, pk=pk)
     return create_success_payload(practitioner.serialize())
@@ -62,7 +61,7 @@ def get_practitioner(request, pk):
 @require_roles(["FACILITY"])
 @csrf_exempt
 @require_POST
-@require_service("REGISTRY")
+@require_service("INDEX")
 def create_record(request):
     return create(request, Record)
 
@@ -70,14 +69,14 @@ def create_record(request):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("REGISTRY")
+@require_service("INDEX")
 def create_rating(request):
     return create(request, RecordRating)
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
-@require_service("REGISTRY")
+@require_service("INDEX")
 def get_record(request, doc_id):
     record = get_object_or_404(Record, pk=doc_id)
     return create_success_payload(record.serialize())
@@ -85,7 +84,7 @@ def get_record(request, doc_id):
 
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
-@require_service("REGISTRY")
+@require_service("INDEX")
 def list_records(request, user_id):
     records = Record.objects.filter(user_id=user_id)
     return create_success_payload([record.serialize() for record in records])

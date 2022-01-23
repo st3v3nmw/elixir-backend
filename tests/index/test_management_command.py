@@ -6,7 +6,7 @@ from django.core.management import call_command
 
 
 @pytest.mark.django_db
-def test_registry_facility(clinic_default_fields_fixture):
+def test_register_facility(clinic_default_fields_fixture):
     out = StringIO()
     fields = clinic_default_fields_fixture
     call_command(
