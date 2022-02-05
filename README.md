@@ -2,7 +2,7 @@
 
 ## Setup
 
-1. Fresh install?, run `scripts/install.sh` to install the required packages like Docker.
+1. Fresh install?, run `scripts/setup.sh` to install the required packages like Docker.
 2. Deploy/build docker container
 3. Run `python manage.py migrate`.
 4. `python manage.py runscript populate_coding_tables`
@@ -14,7 +14,7 @@
 ## Deploying to Remote
 
 1. Setup passwordless SSH on remote.
-2. On the remote machine, run the `scripts/setup.sh` script.
+2. On the remote machine, run the `scripts/setup.sh` script (if 1st deploy).
 3. Create context for remote: `docker context create remote --docker "host=ssh://user@ip"`
 4. Change docker context: `docker context use remote`
 5. Deploy: `COMPOSE_DOCKER_CLI_BUILD=0 docker-compose up -d --build`

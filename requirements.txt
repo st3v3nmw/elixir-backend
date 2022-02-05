@@ -3,6 +3,7 @@ Django==4.0.1
 django-cors-headers
 django-extensions
 flake8
+flake8-docstrings
 model_bakery==1.4.0
 psycopg2-binary
 PyJWT==2.3.0

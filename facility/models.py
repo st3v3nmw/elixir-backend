@@ -158,6 +158,7 @@ class Visit(BaseModel):
         "invoice_number",
         "invoice_attachment",
     ]
+    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["encounters"]
 
     @property
     def invoice_amount(self):
@@ -202,12 +203,17 @@ class Encounter(BaseModel):
         "clinical_notes",
         "attachment",
     ]
+    SERIALIZATION_FIELDS = ["observations", "charge_items", "prescriptions"]
 
     @property
     def total_amount(self):
         return sum(line.total for line in self.charge_items) + sum(
             line.total for line in self.prescriptions
         )
+
+    @property
+    def lines(self):
+        return [*self.charge_items, *self.prescriptions]
 
 
 class Observation(BaseModel):
