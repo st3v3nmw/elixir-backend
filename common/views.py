@@ -2,7 +2,7 @@ from common.payload import create_success_payload, create_error_payload, ErrorCo
 from common.validation import validate_post_data
 
 
-def create(request, model):
+def create(model, request):
     is_valid, request_data, debug_data = validate_post_data(
         request.body, model.POST_REQUIRED_FIELDS
     )
@@ -15,7 +15,7 @@ def create(request, model):
             result.serialize(), message="Created successfully."
         )
     else:
-        return create_error_payload(result)
+        return create_error_payload(message=result)
 
 
 def error404(request, exception):

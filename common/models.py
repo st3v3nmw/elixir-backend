@@ -1,10 +1,7 @@
-import re
 import uuid
 
 from django.db import models, IntegrityError
 from django.core.validators import RegexValidator
-
-from common.payload import ErrorCode
 
 
 class BaseModel(models.Model):
@@ -25,15 +22,7 @@ class BaseModel(models.Model):
         try:
             obj = cls.create(fields)
         except IntegrityError as e:
-            print(e)
-            # TODO: Handle this better
-            # 1. Unique Key Violation
-            # 2. FK not present (i.e. inserting to Practitioner with a non-existent user_id)
-            # 3. Key already exists, 1?
-            extract_field_name_regex = r"Key \((?P<field_name>[_a-z]+)\)=\("
-            match = re.search(extract_field_name_regex, e.__cause__.diag.message_detail)
-            field_name = match.group("field_name")
-            return False, {field_name: ErrorCode.UNIQUE_KEY_VIOLATION}
+            return False, str(e)
         return True, obj
 
     @staticmethod
@@ -58,6 +47,9 @@ class BaseModel(models.Model):
             else:
                 result[field] = str(obj)
         return result
+
+    def fhir_serialize(self):
+        raise NotImplementedError
 
     class Meta:
         abstract = True

@@ -60,8 +60,44 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     def create(cls, fields):
         return User.objects.create_user(**fields)
 
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.surname}"
+
     def __str__(self) -> str:
         return f"{self.first_name} {self.surname} ({self.uuid})"
+
+    def fhir_serialize(self):
+        contacts = []
+        for relative in self.relatives:
+            contacts.append(
+                {
+                    "relationship": relative.relationship,
+                    "name": relative.full_name,
+                    "telecom": {"system": "phone", "value": self.phone_number},
+                    "gender": relative.gender,
+                }
+            )
+
+        return {
+            "resourceType": "Patient",
+            "identifier": [self.uuid],
+            "active": self.is_active,
+            "name": [
+                {
+                    "use": "official",
+                    "text": self.full_name,
+                    "family": self.surname,
+                    "given": self.first_name,
+                }
+            ],
+            "telecom": [{"system": "phone", "value": self.phone_number}],
+            "gender": self.gender,
+            "birthDate": self.date_of_birth,
+            "address": {"text": self.address},
+            "contact": contacts,
+            "communication": [{"language": "en", "preferred": True}],
+        }
 
 
 class NextOfKin(models.Model):

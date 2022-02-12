@@ -68,8 +68,11 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
     response_json = json.loads(response.content)
     assert response_json == {
         "status": "error",
-        "data": {"uuid": "unique_key_violation"},
-        "message": "",
+        "data": {},
+        "message": (
+            'duplicate key value violates unique constraint "authentication_user_pkey"\n'
+            "DETAIL:  Key (uuid)=(c8db9bda-c4cb-4c8e-a343-d19ea17f4875) already exists.\n"
+        ),
     }
 
 

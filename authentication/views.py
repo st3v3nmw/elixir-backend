@@ -7,9 +7,10 @@ from django.contrib.auth import authenticate
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST, require_GET
 
-from .models import User
+from .models import NextOfKin, User
 from index.models import Practitioner
 from common.views import create
+from common.middleware import require_roles
 from common.payload import (
     ErrorCode,
     create_success_payload,
@@ -23,7 +24,7 @@ from common.utils import require_service
 @require_POST
 @require_service("AUTH")
 def register_user(request):
-    return create(request, User)
+    return create(User, request)
 
 
 @csrf_exempt
@@ -82,9 +83,17 @@ def get_public_key(request):
 #     pass
 
 
-# @require_roles(["PATIENT", "PRACTITIONER"])
+# @require_roles(["PATIENT"])
 # @csrf_exempt
 # @require_POST
 # @require_service("AUTH")
 # def change_password(request):
 #     pass
+
+
+@require_roles()
+@csrf_exempt
+@require_POST
+@require_service("AUTH")
+def register_next_of_kin(request):
+    return create(NextOfKin, request)

@@ -1,3 +1,4 @@
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
 
@@ -10,7 +11,6 @@ from common.constants import (
     CONSENT_REQUEST_STATUSES,
     counties_to_regions_map,
 )
-from django.contrib.postgres.fields import ArrayField
 
 from common.utils import ci_lower_bound
 
@@ -69,6 +69,27 @@ class Practitioner(BaseModel):
 
     VALIDATION_FIELDS = ["user_id", "type"]
     SERIALIZATION_FIELDS = ["uuid"] + VALIDATION_FIELDS + ["employment_history"]
+
+    def fhir_serialize(self):
+        return {
+            "resourceType": "Practitioner",
+            "identifier": [self.uuid, self.user.uuid],
+            "active": self.user.is_active,
+            "name": [
+                {
+                    "use": "official",
+                    "text": self.user.full_name,
+                    "family": self.user.surname,
+                    "given": self.user.first_name,
+                }
+            ],
+            "telecom": [{"system": "phone", "value": self.user.phone_number}],
+            "gender": self.user.gender,
+            "birthDate": self.user.date_of_birth,
+            "address": {"text": self.user.address},
+            "qualification": [{"code": self.type}],
+            "communication": [{"language": "en", "preferred": True}],
+        }
 
 
 class Tenure(BaseModel):
@@ -156,14 +177,14 @@ class ConsentRequest(BaseModel):
             max_length=16,
         )
     )
-    practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
+    requestor = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
     request_note = models.TextField()
     status = models.TextField(choices=CONSENT_REQUEST_STATUSES, max_length=16)
 
     POST_REQUIRED_FIELDS = [
         "records",
         "visit_types",
-        "practitioner",
+        "requestor",
         "request_note",
         "status",
     ]
