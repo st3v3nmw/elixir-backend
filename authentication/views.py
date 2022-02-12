@@ -1,29 +1,30 @@
-import os
+"""This module houses API endpoints for the authentication app."""
+
 from datetime import timedelta
+import os
 
 import jwt
-from django.utils import timezone
 from django.contrib.auth import authenticate
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST, require_GET
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import NextOfKin, User
-from index.models import Practitioner
-from common.views import create
-from common.middleware import require_roles
+from common.middleware import require_roles, require_service
 from common.payload import (
+    create_error_payload,
     ErrorCode,
     create_success_payload,
-    create_error_payload,
 )
-from common.validation import validate_post_data
-from common.utils import require_service
+from common.utils import create, validate_post_data
+from index.models import Practitioner
 
 
 @csrf_exempt
 @require_POST
 @require_service("AUTH")
 def register_user(request):
+    """Register a user."""
     return create(User, request)
 
 
@@ -31,6 +32,7 @@ def register_user(request):
 @require_POST
 @require_service("AUTH")
 def login(request):
+    """Authenticate a user and return a JWT access token."""
     is_valid, request_data, debug_data = validate_post_data(
         request.body, ["email", "password"]
     )
@@ -71,6 +73,7 @@ def login(request):
 @require_GET
 @require_service("AUTH")
 def get_public_key(request):
+    """Return the Auth server's public key."""
     return create_success_payload(
         {"algorithm": "RS384", "public_key": os.environ["JWT_PUBLIC_KEY"]}
     )
@@ -91,9 +94,10 @@ def get_public_key(request):
 #     pass
 
 
-@require_roles()
+@require_roles(["PATIENT"])
 @csrf_exempt
 @require_POST
 @require_service("AUTH")
 def register_next_of_kin(request):
+    """Save a next of kin relationship."""
     return create(NextOfKin, request)

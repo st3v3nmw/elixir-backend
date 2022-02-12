@@ -1,3 +1,5 @@
+"""This module houses common app constants."""
+
 from functools import reduce
 
 from common.models import BaseModel

@@ -1,12 +1,15 @@
-import unittest
-from io import StringIO
+"""Test index management commands."""
 
-import pytest
+from io import StringIO
+import unittest
+
 from django.core.management import call_command
+import pytest
 
 
 @pytest.mark.django_db
 def test_register_facility(clinic_default_fields_fixture):
+    """Test register_facility management command."""
     out = StringIO()
     fields = clinic_default_fields_fixture
     call_command(

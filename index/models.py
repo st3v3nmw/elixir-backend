@@ -1,3 +1,5 @@
+"""This module houses models for the facility app."""
+
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.utils import timezone
@@ -5,19 +7,20 @@ from django.utils import timezone
 from authentication.models import User
 from common.models import BaseModel, Entity
 from common.constants import (
-    REGIONS,
-    COUNTIES,
-    PRACTITIONER_TYPES,
     CONSENT_REQUEST_STATUSES,
     counties_to_regions_map,
+    COUNTIES,
+    PRACTITIONER_TYPES,
+    REGIONS,
 )
-
 from common.utils import ci_lower_bound
 
 # Health Facility
 
 
 class Facility(Entity):
+    """Facility model."""
+
     REGIONS = BaseModel.preprocess_choices(REGIONS)
     COUNTIES = BaseModel.preprocess_choices(COUNTIES)
     # http://www.hl7.org/fhir/v3/ServiceDeliveryLocationRoleType/vs.html
@@ -55,6 +58,7 @@ class Facility(Entity):
 
     @property
     def region(self):
+        """Return the region the facility's county belongs to."""
         return counties_to_regions_map[self.county]
 
 
@@ -62,6 +66,8 @@ class Facility(Entity):
 
 
 class Practitioner(BaseModel):
+    """Practitioner model."""
+
     PRACTITIONER_TYPES = BaseModel.preprocess_choices(PRACTITIONER_TYPES)
 
     user = models.OneToOneField(User, on_delete=models.RESTRICT)
@@ -71,6 +77,7 @@ class Practitioner(BaseModel):
     SERIALIZATION_FIELDS = ["uuid"] + VALIDATION_FIELDS + ["employment_history"]
 
     def fhir_serialize(self):
+        """Serialize self as a Practitioner FHIR resource."""
         return {
             "resourceType": "Practitioner",
             "identifier": [self.uuid, self.user.uuid],
@@ -93,6 +100,8 @@ class Practitioner(BaseModel):
 
 
 class Tenure(BaseModel):
+    """Tenure model."""
+
     practitioner = models.ForeignKey(
         Practitioner, related_name="employment_history", on_delete=models.RESTRICT
     )
@@ -103,7 +112,7 @@ class Tenure(BaseModel):
     VALIDATION_FIELDS = ["practitioner_id", "facility_id", "start"]
     SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
 
-    class Meta:
+    class Meta:  # noqa
         unique_together = ("practitioner", "facility", "start")
         ordering = ["-start"]
 
@@ -112,6 +121,8 @@ class Tenure(BaseModel):
 
 
 class Record(BaseModel):
+    """Record model."""
+
     facility = models.ForeignKey(
         Facility, related_name="records", on_delete=models.RESTRICT
     )
@@ -139,6 +150,7 @@ class Record(BaseModel):
 
     @property
     def rating(self):
+        """Calculate the rating for this record using Wilson Score Intervals."""
         n_ratings = self.ratings.objects.all().count()
         n_positive_accurate = self.ratings.objects.filter(is_accurate=True).count()
         n_positive_complete = self.ratings.objects.filter(is_complete=True).count()
@@ -149,6 +161,8 @@ class Record(BaseModel):
 
 
 class RecordRating(BaseModel):
+    """RecordRating model."""
+
     record = models.ForeignKey(
         Record, related_name="ratings", on_delete=models.RESTRICT
     )
@@ -163,6 +177,8 @@ class RecordRating(BaseModel):
 
 
 class ConsentRequest(BaseModel):
+    """ConsentRequest model."""
+
     CONSENT_REQUEST_STATUSES = BaseModel.preprocess_choices(CONSENT_REQUEST_STATUSES)
 
     records = models.ManyToManyField(to=Record, related_name="consent_requests")
@@ -192,6 +208,8 @@ class ConsentRequest(BaseModel):
 
 
 class ConsentRequestTransition(BaseModel):
+    """ConsentRequestTransition model."""
+
     consent_request = models.ForeignKey(
         ConsentRequest, related_name="transition_logs", on_delete=models.RESTRICT
     )
@@ -218,6 +236,8 @@ class ConsentRequestTransition(BaseModel):
 
 
 class AccessLog(BaseModel):
+    """AccessLog model."""
+
     record = models.ForeignKey(
         Record, related_name="access_logs", on_delete=models.RESTRICT
     )

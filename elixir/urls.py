@@ -1,6 +1,8 @@
+"""Elixir project URLs."""
+
 from django.urls import path, include
 
-from common.views import error404
+from common.utils import error404
 
 handler404 = error404
 

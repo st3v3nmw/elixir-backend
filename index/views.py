@@ -1,7 +1,9 @@
+"""This module houses API endpoints for the index app."""
+
 from django.contrib.postgres.search import SearchVector
 from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from .models import (
     AccessLog,
@@ -9,16 +11,14 @@ from .models import (
     ConsentRequestTransition,
     Facility,
     Practitioner,
-    Tenure,
     Record,
     RecordRating,
+    Tenure,
 )
 from authentication.models import User
-from common.middleware import require_roles
+from common.middleware import require_roles, require_service
 from common.payload import create_error_payload, create_success_payload
-from common.utils import require_service
-from common.validation import validate_post_data
-from common.views import create
+from common.utils import create, validate_post_data
 
 
 # Health Facilities
@@ -28,6 +28,7 @@ from common.views import create
 @require_GET
 @require_service("INDEX")
 def get_facility(request, pk):
+    """GET a facility."""
     facility = get_object_or_404(Facility, uuid=pk)
     return create_success_payload(facility.serialize())
 
@@ -36,6 +37,7 @@ def get_facility(request, pk):
 @require_GET
 @require_service("INDEX")
 def list_facilities(request):
+    """List all registered facilities."""
     facilities = Facility.objects.all()
     return create_success_payload([facility.serialize() for facility in facilities])
 
@@ -48,6 +50,7 @@ def list_facilities(request):
 @require_POST
 @require_service("INDEX")
 def register_practitioner(request):
+    """Register a practitioner."""
     return create(Practitioner, request)
 
 
@@ -56,6 +59,7 @@ def register_practitioner(request):
 @require_POST
 @require_service("INDEX")
 def register_tenure(request):
+    """Register a practitioner's tenure at a specific facility."""
     return create(Tenure, request)
 
 
@@ -63,6 +67,7 @@ def register_tenure(request):
 @require_GET
 @require_service("INDEX")
 def get_practitioner(request, pk):
+    """GET a practitioner."""
     practitioner = get_object_or_404(Practitioner, uuid=pk)
     return create_success_payload(
         {
@@ -76,6 +81,7 @@ def get_practitioner(request, pk):
 @require_GET
 @require_service("INDEX")
 def list_practitioners(request):
+    """List all registered practitioners."""
     practitioners = Practitioner.objects.all()
     return create_success_payload(
         [
@@ -93,6 +99,7 @@ def list_practitioners(request):
 @require_POST
 @require_service("INDEX")
 def search_providers(request):
+    """Search for facilities and practitioners."""
     is_valid, request_data, debug_data = validate_post_data(request.body, ["query"])
     if not is_valid:
         return create_error_payload(debug_data["data"], message=debug_data["message"])
@@ -121,6 +128,7 @@ def search_providers(request):
 @require_POST
 @require_service("INDEX")
 def create_record(request):
+    """Create a record."""
     return create(Record, request)
 
 
@@ -129,6 +137,7 @@ def create_record(request):
 @require_POST
 @require_service("INDEX")
 def create_rating(request):
+    """Create a rating."""
     return create(RecordRating, request)
 
 
@@ -136,6 +145,7 @@ def create_rating(request):
 @require_GET
 @require_service("INDEX")
 def get_record(request, doc_id):
+    """GET a record."""
     record = get_object_or_404(Record, uuid=doc_id)
     return create_success_payload(record.serialize())
 
@@ -144,6 +154,7 @@ def get_record(request, doc_id):
 @require_GET
 @require_service("INDEX")
 def list_records(request, user_id):
+    """List all records belonging to a particular user."""
     records = Record.objects.filter(user_id=user_id)
     return create_success_payload([record.serialize() for record in records])
 
@@ -156,6 +167,7 @@ def list_records(request, user_id):
 @require_POST
 @require_service("INDEX")
 def create_consent_request(request):
+    """Create a consent request."""
     return create(ConsentRequest, request)
 
 
@@ -164,6 +176,7 @@ def create_consent_request(request):
 @require_GET
 @require_service("INDEX")
 def get_consent_request(request, request_id):
+    """GET a consent request."""
     request = get_object_or_404(ConsentRequest, uuid=request_id)
     return create_success_payload(request.serialize())
 
@@ -173,6 +186,7 @@ def get_consent_request(request, request_id):
 @require_GET
 @require_service("INDEX")
 def list_consent_requests(request, record_id):
+    """List all consent requests for a particular record."""
     requests = ConsentRequest.objects.filter(record__in=record_id)
     return create_success_payload([request.serialize() for request in requests])
 
@@ -182,6 +196,7 @@ def list_consent_requests(request, record_id):
 @require_POST
 @require_service("INDEX")
 def create_consent_request_transition(request):
+    """Create a consent request transition."""
     is_valid, request_data, debug_data = validate_post_data(
         request.body, ["request_id", "to_state"]
     )
@@ -189,7 +204,7 @@ def create_consent_request_transition(request):
         return create_error_payload(debug_data["data"], message=debug_data["message"])
 
     request = get_object_or_404(ConsentRequest, uuid=request_data["request_id"])
-    transition = ConsentRequestTransition.create(
+    transition = ConsentRequestTransition.objects.create(
         consent_request=request,
         from_state=request.status,
         to_state=request_data["to_state"],
@@ -206,6 +221,7 @@ def create_consent_request_transition(request):
 @require_POST
 @require_service("INDEX")
 def create_access_log(request):
+    """Create an access log entry."""
     return create(AccessLog, request)
 
 
@@ -214,6 +230,7 @@ def create_access_log(request):
 @require_GET
 @require_service("INDEX")
 def get_access_log(request, log_id):
+    """GET an access log entry."""
     log = get_object_or_404(AccessLog, uuid=log_id)
     return create_success_payload(log.serialize())
 
@@ -223,6 +240,7 @@ def get_access_log(request, log_id):
 @require_GET
 @require_service("INDEX")
 def list_access_logs(request, record_id):
+    """List all access logs for a particular record."""
     logs = AccessLog.objects.filter(record=record_id)
     return create_success_payload([log.serialize() for log in logs])
 
@@ -233,5 +251,6 @@ def list_access_logs(request, record_id):
 @require_GET
 @require_service("INDEX")
 def get_patient(request, patient_id):
+    """GET a patient in FHIR format."""
     patient = get_object_or_404(User, uuid=patient_id)
     return create_success_payload(patient.fhir_serialize())

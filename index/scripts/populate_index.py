@@ -1,3 +1,5 @@
+"""Script to populate the index using some sample objects."""
+
 from index.models import Facility
 
 facilities = [
@@ -89,6 +91,7 @@ facilities = [
 
 
 def run():
+    """Run the populate_index script."""
     for facility in facilities:
         facility.pop("region")
         Facility.objects.update_or_create(**facility)

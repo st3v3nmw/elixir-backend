@@ -1,3 +1,5 @@
+"""Script to populate the coding tables."""
+
 import csv
 
 from tqdm import tqdm
@@ -19,6 +21,7 @@ RXTERMS_SOURCE_CSV = "facility/scripts/data/RxTerms202201.csv"
 
 
 def run():
+    """Run populate_coding_tables script."""
     print(f"Populating HCPCS table from {HCPCS_SOURCE_CSV}...")
     with open(HCPCS_SOURCE_CSV, "r") as f:
         rows = list(csv.DictReader(f))

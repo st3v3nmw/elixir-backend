@@ -1,10 +1,13 @@
+"""This module houses common abstract models."""
+
 import uuid
 
-from django.db import models, IntegrityError
 from django.core.validators import RegexValidator
+from django.db import IntegrityError, models
 
 
 class BaseModel(models.Model):
+    """Abstract model which this project's models inherit."""
 
     POST_REQUIRED_FIELDS = []
     SERIALIZATION_FIELDS = []
@@ -15,18 +18,16 @@ class BaseModel(models.Model):
 
     @classmethod
     def create(cls, fields):
-        return cls.objects.create(**fields)
-
-    @classmethod
-    def save_wrapper(cls, fields):
+        """Wrap the cls.objects.create method to hoist errors up the call stack."""
         try:
-            obj = cls.create(fields)
+            obj = cls.objects.create(**fields)
         except IntegrityError as e:
             return False, str(e)
         return True, obj
 
     @staticmethod
     def preprocess_choices(choices):
+        """Preprocess text[] for use in Django choicefield models."""
         result = []
         for choice in choices:
             code = choice.upper()
@@ -35,6 +36,7 @@ class BaseModel(models.Model):
         return result
 
     def serialize(self):
+        """Convert self into a dictionary with self.SERIALIZATION_FIELDS keys."""
         result = {}
         for field in self.SERIALIZATION_FIELDS:
             obj = getattr(self, field)
@@ -49,13 +51,16 @@ class BaseModel(models.Model):
         return result
 
     def fhir_serialize(self):
-        raise NotImplementedError
+        """Serialize self as an FHIR resource."""
+        raise NotImplementedError  # Implemented by child class
 
-    class Meta:
+    class Meta:  # noqa
         abstract = True
 
 
 class Entity(BaseModel):
+    """Abstract model for users and organizations."""
+
     phone_regex = RegexValidator(
         regex=r"^\+254\d{9}$",
         message="Phone number must be entered in the format: '+254712345678'.",
@@ -68,5 +73,5 @@ class Entity(BaseModel):
     date_joined = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
-    class Meta:
+    class Meta:  # noqa
         abstract = True

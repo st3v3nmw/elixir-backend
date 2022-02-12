@@ -1,13 +1,18 @@
+"""Management command to register a facility."""
+
 from django.core.management.base import BaseCommand
 
+from common.middleware import require_service
 from index.models import Facility
-from common.utils import require_service
 
 
 class Command(BaseCommand):
+    """Management command to register a facility."""
+
     help = "Adds a health facility to the index"
 
     def add_arguments(self, parser) -> None:
+        """Add arguments to management command."""
         parser.add_argument("name", type=str)
         parser.add_argument(
             "county", choices=[county[0] for county in Facility.COUNTIES]
@@ -23,6 +28,7 @@ class Command(BaseCommand):
 
     @require_service("INDEX")
     def handle(self, *args, **kwargs):
+        """Process the command."""
         fields = {
             "name": kwargs["name"],
             "county": kwargs["county"],

@@ -1,8 +1,10 @@
+"""Tests for index app views."""
+
 import json
 
-import pytest
 from django.test import Client
 from model_bakery import baker
+import pytest
 
 from authentication.models import User
 from index.models import Facility
@@ -10,6 +12,7 @@ from index.models import Facility
 
 @pytest.mark.django_db
 def test_list_facilities(patient_auth_token_fixture):
+    """Test listing of all facilities."""
     for _ in range(4):
         baker.make(Facility)
 
@@ -27,6 +30,7 @@ def test_list_facilities(patient_auth_token_fixture):
 
 @pytest.mark.django_db
 def test_get_facility(clinic_fixture, patient_auth_token_fixture):
+    """Test fetching a particular facility."""
     client = Client()
     response_json = json.loads(
         client.get(
@@ -57,6 +61,7 @@ def test_get_facility(clinic_fixture, patient_auth_token_fixture):
 
 @pytest.mark.django_db
 def test_get_facility_error404(patient_auth_token_fixture):
+    """Test fetching a non-existent facility."""
     client = Client()
     response_json = json.loads(
         client.get(
@@ -74,6 +79,7 @@ def test_get_facility_error404(patient_auth_token_fixture):
 
 @pytest.mark.django_db
 def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
+    """Test registration of a practitioner."""
     client = Client()
 
     doc2 = baker.make(User)
@@ -105,6 +111,7 @@ def test_register_practitioner(practitioner_fixture, doctor_auth_token_fixture):
 def test_register_tenure(
     practitioner_fixture, clinic_fixture, doctor_auth_token_fixture
 ):
+    """Test registration of a practitioner's tenure."""
     client = Client()
 
     response = client.post(
@@ -135,6 +142,7 @@ def test_register_tenure(
 def test_get_practitioner(
     practitioner_fixture, tenure_fixture, patient_auth_token_fixture
 ):
+    """Test fetching a practitioner."""
     client = Client()
 
     response_json = json.loads(
@@ -147,17 +155,41 @@ def test_get_practitioner(
     assert response_json == {
         "status": "success",
         "data": {
-            "uuid": response_json["data"]["uuid"],
-            "user_id": practitioner_fixture.user_id,
-            "type": "PHYSICIAN",
-            "employment_history": [
-                {
-                    "uuid": str(tenure_fixture.uuid),
-                    "facility_id": tenure_fixture.facility_id,
-                    "start": "2011-01-01",
-                    "end": "2013-11-05",
-                }
-            ],
+            "fhir": {
+                "resourceType": "Practitioner",
+                "active": True,
+                "address": {"text": "1 Rosslyn Close, Westlands"},
+                "birthDate": "1990-12-12",
+                "communication": [{"language": "en", "preferred": True}],
+                "gender": "FEMALE",
+                "identifier": [
+                    response_json["data"]["extra"]["uuid"],
+                    practitioner_fixture.user_id,
+                ],
+                "name": [
+                    {
+                        "family": "Doe",
+                        "given": "Jane",
+                        "text": "Jane Doe",
+                        "use": "official",
+                    }
+                ],
+                "qualification": [{"code": "PHYSICIAN"}],
+                "telecom": [{"system": "phone", "value": "+254712345678"}],
+            },
+            "extra": {
+                "uuid": response_json["data"]["extra"]["uuid"],
+                "user_id": practitioner_fixture.user_id,
+                "type": "PHYSICIAN",
+                "employment_history": [
+                    {
+                        "uuid": str(tenure_fixture.uuid),
+                        "facility_id": tenure_fixture.facility_id,
+                        "start": "2011-01-01",
+                        "end": "2013-11-05",
+                    }
+                ],
+            },
         },
         "message": "",
     }

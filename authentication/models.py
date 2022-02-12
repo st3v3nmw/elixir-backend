@@ -1,18 +1,23 @@
-from django.db import models
+"""This module houses models for the authentication app."""
+
 from django.contrib.auth.models import (
     AbstractBaseUser,
-    PermissionsMixin,
     BaseUserManager,
+    PermissionsMixin,
 )
+from django.db import models
 
-from common.models import BaseModel, Entity
 from common.constants import GENDERS
+from common.models import BaseModel, Entity
 
 
 class CustomUserManager(BaseUserManager):
+    """Manager for User model."""
+
     use_in_migrations = True
 
     def create_user(self, email, password, **kwargs):
+        """Instantiate User model."""
         email = self.normalize_email(email)
         user = self.model(email=email, **kwargs)
         user.set_password(password)
@@ -21,6 +26,8 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, Entity, PermissionsMixin):
+    """User model."""
+
     GENDERS = BaseModel.preprocess_choices(GENDERS)
 
     first_name = models.CharField(max_length=32)
@@ -50,24 +57,23 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     SERIALIZATION_FIELDS = (
         ["uuid", USERNAME_FIELD]
         + REQUIRED_FIELDS
-        + ["records", "relatives", "date_joined", "is_active"]
+        + ["address", "records", "relatives", "date_joined", "is_active"]
     )
 
-    class Meta:
+    class Meta:  # noqa
         ordering = ["-date_joined"]
-
-    @classmethod
-    def create(cls, fields):
-        return User.objects.create_user(**fields)
 
     @property
     def full_name(self) -> str:
+        """Return the User's full name."""
         return f"{self.first_name} {self.surname}"
 
     def __str__(self) -> str:
+        """Return string representation of User."""
         return f"{self.first_name} {self.surname} ({self.uuid})"
 
     def fhir_serialize(self):
+        """Serialize self as a Patient FHIR resource."""
         contacts = []
         for relative in self.relatives:
             contacts.append(
@@ -101,6 +107,8 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
 
 
 class NextOfKin(models.Model):
+    """NextOfKin model."""
+
     user = models.ForeignKey(User, related_name="user", on_delete=models.CASCADE)
     next_of_kin = models.ForeignKey(
         User, related_name="next_of_kin", on_delete=models.CASCADE

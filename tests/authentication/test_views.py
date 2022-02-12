@@ -1,12 +1,15 @@
-import os
-import json
+"""Tests for authentication views."""
 
+import json
+import os
+
+from django.test import Client
 import jwt
 import pytest
-from django.test import Client
 
 
 def test_user_registration_endpoint_missing_fields() -> None:
+    """Test user registration using missng fields."""
     client = Client()
 
     response = client.post(
@@ -33,6 +36,7 @@ def test_user_registration_endpoint_missing_fields() -> None:
 
 @pytest.mark.django_db
 def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) -> None:
+    """Test user registration using a properly populated payload."""
     client = Client()
 
     patient_default_fields_fixture["email"] = "john@example.com"
@@ -78,6 +82,7 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
 
 @pytest.mark.django_db
 def test_patient_login(patient_fixture):
+    """Test patient login."""
     client = Client()
 
     # login failure
@@ -119,6 +124,7 @@ def test_patient_login(patient_fixture):
 
 @pytest.mark.django_db
 def test_physician_login_roles(doctor_fixture, practitioner_fixture):
+    """Test physician login & verify token roles."""
     client = Client()
     response = client.post(
         "/api/auth/login/",
@@ -140,6 +146,7 @@ def test_physician_login_roles(doctor_fixture, practitioner_fixture):
 
 
 def test_get_public_key():
+    """Test fetching the AUTH server's public key."""
     client = Client()
     response_json = json.loads(client.get("/api/auth/public-key/").content)
     assert response_json["data"]["algorithm"] == "RS384"
