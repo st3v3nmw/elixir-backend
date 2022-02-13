@@ -248,6 +248,7 @@ def list_access_logs(request, record_id):
 # Patient
 
 
+@require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
 @require_service("INDEX")
 def get_patient(request, patient_id):

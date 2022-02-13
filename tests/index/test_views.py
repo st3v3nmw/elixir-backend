@@ -6,7 +6,7 @@ from django.test import Client
 from model_bakery import baker
 import pytest
 
-from authentication.models import User
+from authentication.models import NextOfKin, User
 from index.models import Facility
 
 
@@ -161,7 +161,7 @@ def test_get_practitioner(
                 "address": {"text": "1 Rosslyn Close, Westlands"},
                 "birthDate": "1990-12-12",
                 "communication": [{"language": "en", "preferred": True}],
-                "gender": "FEMALE",
+                "gender": "female",
                 "identifier": [
                     response_json["data"]["extra"]["uuid"],
                     practitioner_fixture.user_id,
@@ -190,6 +190,55 @@ def test_get_practitioner(
                     }
                 ],
             },
+        },
+        "message": "",
+    }
+
+
+@pytest.mark.django_db
+def test_get_patient(
+    practitioner_fixture, doctor_fixture, doctor_auth_token_fixture, patient_fixture
+):
+    """Test the get patient as FHIR function."""
+    NextOfKin.objects.create(
+        user=patient_fixture, next_of_kin=doctor_fixture, relationship="PARENT"
+    )
+
+    client = Client()
+    response_json = json.loads(
+        client.get(
+            f"/api/index/patients/{patient_fixture.uuid}/",
+            HTTP_AUTHORIZATION=f"Bearer {doctor_auth_token_fixture}",
+        ).content
+    )
+
+    assert response_json == {
+        "status": "success",
+        "data": {
+            "resourceType": "Patient",
+            "identifier": ["c8db9bda-c4cb-4c8e-a343-d19ea17f4875"],
+            "name": [
+                {
+                    "use": "official",
+                    "text": "John Doe",
+                    "family": "Doe",
+                    "given": "John",
+                }
+            ],
+            "telecom": [{"system": "phone", "value": "+254712345678"}],
+            "gender": "male",
+            "birthDate": "2000-12-07",
+            "address": {"text": "1-10100 Nyeri"},
+            "contact": [
+                {
+                    "gender": "female",
+                    "name": "Jane Doe",
+                    "relationship": "PARENT",
+                    "telecom": {"system": "phone", "value": "+254712345678"},
+                }
+            ],
+            "communication": [{"language": "en", "preferred": True}],
+            "active": True,
         },
         "message": "",
     }

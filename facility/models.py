@@ -71,6 +71,8 @@ class ICD10Category(BaseModel):
     code = models.CharField(max_length=16, unique=True)
     title = models.TextField()
 
+    SERIALIZATION_FIELDS = ["code", "title"]
+
     def __str__(self) -> str:
         """Return the string representation of the ICD10Category."""
         return f"{self.code} {self.title} ({self.uuid})"
@@ -109,7 +111,7 @@ class HCPCS(BaseModel):
     seq_num = models.CharField(max_length=8, default="0010")
     description = models.TextField()
 
-    SERIALIZATION_FIELDS = ["code", "description"]
+    SERIALIZATION_FIELDS = ["code", "seq_num", "description"]
 
     class Meta:  # noqa
         unique_together = ("code", "seq_num")
@@ -173,6 +175,7 @@ class Visit(BaseModel):
         "secondary_diagnoses",
         "invoice_number",
         "invoice_attachment",
+        "is_synced",
     ]
     SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["encounters"]
 
@@ -222,7 +225,11 @@ class Encounter(BaseModel):
         "clinical_notes",
         "attachment",
     ]
-    SERIALIZATION_FIELDS = ["observations", "charge_items", "prescriptions"]
+    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + [
+        "observations",
+        "charge_items",
+        "prescriptions",
+    ]
 
     @property
     def lines(self):
@@ -245,6 +252,7 @@ class Observation(BaseModel):
     result = models.CharField(max_length=256, null=True)
 
     POST_REQUIRED_FIELDS = ["loinc_id", "encounter_id", "result"]
+    SERIALIZATION_FIELDS = ["loinc", "encounter_id", "result"]
 
 
 class AbstractChargeItem(BaseModel):
@@ -278,6 +286,7 @@ class ChargeItem(AbstractChargeItem):
         "quantity",
         "is_paid",
     ]
+    SERIALIZATION_FIELDS = ["encounter_id", "item", "unit_price", "quantity", "is_paid"]
 
 
 class Prescription(AbstractChargeItem):
@@ -307,4 +316,14 @@ class Prescription(AbstractChargeItem):
         "frequency",
         "duration",
         "is_paid",
+    ]
+    SERIALIZATION_FIELDS = [
+        "encounter_id",
+        "drug",
+        "description",
+        "frequency",
+        "duration",
+        "is_paid",
+        "unit_price",
+        "quantity",
     ]

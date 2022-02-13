@@ -91,7 +91,7 @@ class Practitioner(BaseModel):
                 }
             ],
             "telecom": [{"system": "phone", "value": self.user.phone_number}],
-            "gender": self.user.gender,
+            "gender": self.user.gender.lower(),
             "birthDate": self.user.date_of_birth,
             "address": {"text": self.user.address},
             "qualification": [{"code": self.type}],

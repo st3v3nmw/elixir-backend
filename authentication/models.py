@@ -75,13 +75,16 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     def fhir_serialize(self):
         """Serialize self as a Patient FHIR resource."""
         contacts = []
-        for relative in self.relatives:
+        for relation in NextOfKin.objects.filter(user=self):
             contacts.append(
                 {
-                    "relationship": relative.relationship,
-                    "name": relative.full_name,
-                    "telecom": {"system": "phone", "value": self.phone_number},
-                    "gender": relative.gender,
+                    "relationship": relation.relationship,
+                    "name": relation.next_of_kin.full_name,
+                    "telecom": {
+                        "system": "phone",
+                        "value": relation.next_of_kin.phone_number,
+                    },
+                    "gender": relation.next_of_kin.gender.lower(),
                 }
             )
 
@@ -98,7 +101,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
                 }
             ],
             "telecom": [{"system": "phone", "value": self.phone_number}],
-            "gender": self.gender,
+            "gender": self.gender.lower(),
             "birthDate": self.date_of_birth,
             "address": {"text": self.address},
             "contact": contacts,
