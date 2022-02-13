@@ -1,6 +1,5 @@
 """This module houses API endpoints for the index app."""
 
-from django.contrib.postgres.search import SearchVector
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -18,7 +17,7 @@ from .models import (
 from authentication.models import User
 from common.middleware import require_roles, require_service
 from common.payload import create_error_payload, create_success_payload
-from common.utils import create, validate_post_data
+from common.utils import create, search_table, validate_post_data
 
 
 # Health Facilities
@@ -40,6 +39,15 @@ def list_facilities(request):
     """List all registered facilities."""
     facilities = Facility.objects.all()
     return create_success_payload([facility.serialize() for facility in facilities])
+
+
+@require_roles(["PATIENT", "PRACTITIONER"])
+@csrf_exempt
+@require_POST
+@require_service("INDEX")
+def search_facilities(request):
+    """Search practitioners."""
+    return search_table(Facility, ["name", "location", "county"], request)
 
 
 # Practitioner
@@ -91,33 +99,13 @@ def list_practitioners(request):
     )
 
 
-# Search Providers
-
-
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_POST
 @require_service("INDEX")
-def search_providers(request):
-    """Search for facilities and practitioners."""
-    is_valid, request_data, debug_data = validate_post_data(request.body, ["query"])
-    if not is_valid:
-        return create_error_payload(debug_data["data"], message=debug_data["message"])
-
-    facilities = Facility.objects.annotate(
-        search=SearchVector("name", "location", "county")
-    ).filter(search=request_data["query"])
-
-    practitioners = Practitioner.objects.annotate(
-        search=SearchVector("user__first_name", "user__surname")
-    ).filter(search=request_data["query"])
-
-    return create_success_payload(
-        [
-            *[facility.serialize() for facility in facilities],
-            *[practitioner.serialize() for practitioner in practitioners],
-        ]
-    )
+def search_practitioners(request):
+    """Search for practitioners."""
+    return search_table(Practitioner, ["user__first_name", "user__surname"], request)
 
 
 # Records
