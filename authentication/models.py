@@ -31,7 +31,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     GENDERS = BaseModel.preprocess_choices(GENDERS)
 
     first_name = models.CharField(max_length=32)
-    surname = models.CharField(max_length=32)
+    last_name = models.CharField(max_length=32)
     national_id = models.CharField(null=True, max_length=32, unique=True)
     gender = models.CharField(choices=GENDERS, max_length=6)
     date_of_birth = models.DateField()
@@ -46,7 +46,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = [
         "first_name",
-        "surname",
+        "last_name",
         "national_id",
         "gender",
         "date_of_birth",
@@ -63,14 +63,18 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     class Meta:  # noqa
         ordering = ["-date_joined"]
 
+    @classmethod
+    def create(cls, fields):
+        return True, User.objects.create_user(**fields)
+
     @property
     def full_name(self) -> str:
         """Return the User's full name."""
-        return f"{self.first_name} {self.surname}"
+        return f"{self.first_name} {self.last_name}"
 
     def __str__(self) -> str:
         """Return string representation of User."""
-        return f"{self.first_name} {self.surname} ({self.uuid})"
+        return f"{self.first_name} {self.last_name} ({self.uuid})"
 
     def fhir_serialize(self):
         """Serialize self as a Patient FHIR resource."""
@@ -96,7 +100,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
                 {
                     "use": "official",
                     "text": self.full_name,
-                    "family": self.surname,
+                    "family": self.last_name,
                     "given": self.first_name,
                 }
             ],

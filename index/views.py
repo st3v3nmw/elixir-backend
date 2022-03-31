@@ -105,7 +105,7 @@ def list_practitioners(request):
 @require_service("INDEX")
 def search_practitioners(request):
     """Search for practitioners."""
-    return search_table(Practitioner, ["user__first_name", "user__surname"], request)
+    return search_table(Practitioner, ["user__first_name", "user__last_name"], request)
 
 
 # Records

@@ -54,7 +54,7 @@ MIDDLEWARE = [
     "common.middleware.LoginRequiredMiddleware",
 ]
 
-ROOT_URLCONF = "elixir.urls"
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
@@ -72,7 +72,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "elixir.wsgi.application"
+WSGI_APPLICATION = "config.wsgi.application"
 
 CORS_ALLOWED_ORIGINS = ["http://localhost", "http://localhost:8080"]
 

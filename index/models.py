@@ -86,7 +86,7 @@ class Practitioner(BaseModel):
                 {
                     "use": "official",
                     "text": self.user.full_name,
-                    "family": self.user.surname,
+                    "family": self.user.last_name,
                     "given": self.user.first_name,
                 }
             ],

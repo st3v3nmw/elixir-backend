@@ -17,7 +17,7 @@ def test_user_registration_endpoint_missing_fields() -> None:
         {
             "email": "adelaide@example.com",
             "first_name": "Adelaide",
-            "surname": "Doe",
+            "last_name": "Doe",
         },
         content_type="application/json",
     )

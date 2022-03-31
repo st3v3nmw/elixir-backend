@@ -18,7 +18,7 @@ def patient_default_fields_fixture():
     return {
         "uuid": "c8db9bda-c4cb-4c8e-a343-d19ea17f4875",
         "first_name": "John",
-        "surname": "Doe",
+        "last_name": "Doe",
         "phone_number": "+254712345678",
         "national_id": "12345",
         "gender": "MALE",
@@ -82,7 +82,7 @@ def doctor_fixture() -> User:
     doctor_default_fields = {
         "uuid": "601e357c-91e5-4d28-b830-5462590adb3c",
         "first_name": "Jane",
-        "surname": "Doe",
+        "last_name": "Doe",
         "phone_number": "+254712345678",
         "national_id": "67890",
         "gender": "FEMALE",
