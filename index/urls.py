@@ -14,6 +14,7 @@ urlpatterns = [
     path("practitioners/tenures/new/", views.register_tenure),
     path("practitioners/search/", views.search_practitioners),
     path("patients/<uuid:patient_id>/", views.get_patient),
+    path("patients/search/", views.search_patients),
     path("records/new/", views.create_record),
     path("records/ratings/new/", views.create_rating),
     path("records/<uuid:doc_id>/", views.get_record),

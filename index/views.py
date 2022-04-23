@@ -186,7 +186,7 @@ def list_consent_requests(request, record_id):
 def create_consent_request_transition(request):
     """Create a consent request transition."""
     is_valid, request_data, debug_data = validate_post_data(
-        request.body, ["request_id", "to_state"]
+        request, ["request_id", "to_state"]
     )
     if not is_valid:
         return create_error_payload(debug_data["data"], message=debug_data["message"])
@@ -243,3 +243,16 @@ def get_patient(request, patient_id):
     """GET a patient in FHIR format."""
     patient = get_object_or_404(User, uuid=patient_id)
     return create_success_payload(patient.fhir_serialize())
+
+
+# @require_roles(["PRACTITIONER"])
+@csrf_exempt
+@require_POST
+@require_service("INDEX")
+def search_patients(request):
+    """Search patients."""
+    return search_table(
+        User,
+        ["first_name", "last_name", "national_id", "email", "phone_number"],
+        request,
+    )

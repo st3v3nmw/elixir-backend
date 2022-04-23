@@ -66,6 +66,17 @@ PRACTITIONER_TYPES = [
 CONSENT_REQUEST_STATUSES = ["Draft", "Pending", "Approved", "Rejected", "Withdrawn"]
 
 VISIT_TYPES = ["Outpatient", "Inpatient", "Dental", "Optical"]
+# https://manual.jointcommission.org/releases/TJC2016A/DataElem0537.html
+DISCHARGE_TYPES = [
+    "Home",
+    "Hospice Alternative Home",
+    "Hospice HealthCare Facility",
+    "Acute Care Facility",
+    "Other Health Facility",
+    "Expired",
+    "Left Against Medical Advice",
+    "Not Documented"
+]
 ENCOUNTER_STATUS = [
     "Planned",
     "Arrived",
@@ -74,4 +85,5 @@ ENCOUNTER_STATUS = [
     "Onleave",
     "Finished",
     "Cancelled",
+    "Entered in Error",
 ]

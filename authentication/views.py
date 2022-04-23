@@ -34,7 +34,7 @@ def register_user(request):
 def login(request):
     """Authenticate a user and return a JWT access token."""
     is_valid, request_data, debug_data = validate_post_data(
-        request.body, ["email", "password"]
+        request, ["email", "password"]
     )
     if not is_valid:
         return create_error_payload(

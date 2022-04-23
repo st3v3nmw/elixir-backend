@@ -2,7 +2,7 @@
 
 from django.db import models
 
-from common.constants import ENCOUNTER_STATUS, VISIT_TYPES
+from common.constants import ENCOUNTER_STATUS, DISCHARGE_TYPES, VISIT_TYPES
 from common.models import BaseModel
 
 # Coding
@@ -150,6 +150,7 @@ class Visit(BaseModel):
     """Visit model."""
 
     VISIT_TYPES = BaseModel.preprocess_choices(VISIT_TYPES)
+    DISCHARGE_TYPES = BaseModel.preprocess_choices(DISCHARGE_TYPES)
 
     patient_id = models.UUIDField()
     facility_id = models.UUIDField()
@@ -160,9 +161,11 @@ class Visit(BaseModel):
     secondary_diagnoses = models.ManyToManyField(
         to=ICD10, related_name="secondary_diagnoses"
     )
+    discharge_disposition = models.CharField(choices=DISCHARGE_TYPES)
     invoice_number = models.CharField(max_length=32)
     invoice_attachment = models.FileField(upload_to="attachments/")
 
+    status = models.CharField(choices=[("DRAFT", "Draft"), ("FINALIZED", "Finalized")])
     is_synced = models.BooleanField(default=False)
 
     POST_REQUIRED_FIELDS = [
@@ -173,11 +176,12 @@ class Visit(BaseModel):
         "end",
         "primary_diagnosis",
         "secondary_diagnoses",
+        "discharge_disposition",
         "invoice_number",
         "invoice_attachment",
-        "is_synced",
+        "status",
     ]
-    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["encounters"]
+    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["is_synced", "encounters"]
 
     @property
     def invoice_amount(self):

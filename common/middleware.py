@@ -42,7 +42,7 @@ class LoginRequiredMiddleware:
         return response
 
     def process_view(self, request, view_func, view_args, view_kwargs):
-        """Eextract user token (& roles) from a request."""
+        """Extract user token (& roles) from a request."""
         required_roles = getattr(view_func, "required_roles", [])
         if len(required_roles) == 0:
             return None

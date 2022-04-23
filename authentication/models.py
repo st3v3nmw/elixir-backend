@@ -113,7 +113,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
         }
 
 
-class NextOfKin(models.Model):
+class NextOfKin(BaseModel):
     """NextOfKin model."""
 
     user = models.ForeignKey(User, related_name="user", on_delete=models.CASCADE)
@@ -133,4 +133,10 @@ class NextOfKin(models.Model):
     can_consent = models.BooleanField(default=False)
 
     POST_REQUIRED_FIELDS = ["user_id", "next_of_kin_id", "relationship", "can_consent"]
-    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS
+    SERIALIZATION_FIELDS = ["uuid"] + POST_REQUIRED_FIELDS
+
+    class Meta:
+        unique_together = (
+            "user",
+            "next_of_kin",
+        )

@@ -18,9 +18,9 @@ class BaseModel(models.Model):
 
     @classmethod
     def create(cls, fields):
-        """Wrap the cls.objects.create method to hoist errors up the call stack."""
+        """Wrap the cls.objects.update_or_create method to hoist errors up the call stack."""
         try:
-            obj = cls.objects.create(**fields)
+            obj = cls.objects.update_or_create(**fields)
         except IntegrityError as e:
             return False, str(e)
         return True, obj

@@ -8,10 +8,12 @@ from django.contrib.postgres.search import SearchVector
 from common.payload import create_error_payload, create_success_payload, ErrorCode
 
 
-def validate_post_data(request_data, required_fields):
+def validate_post_data(request, required_fields):
     """Validate POST fields against a list of required fields."""
     try:
-        request_data = json.loads(request_data)
+        request_data = json.loads(request.body)
+        if "user_id" in required_fields:
+            request_data["user_id"] = request.token["sub"]
     except json.JSONDecodeError:
         return False, {}, {"data": {}, "message": "Please provide valid JSON."}
 
@@ -30,7 +32,7 @@ def validate_post_data(request_data, required_fields):
 def create(model, request):
     """Validate POST data and save it to the table."""
     is_valid, request_data, debug_data = validate_post_data(
-        request.body, model.POST_REQUIRED_FIELDS
+        request, model.POST_REQUIRED_FIELDS
     )
     if not is_valid:
         return create_error_payload(debug_data["data"], message=debug_data["message"])
@@ -46,7 +48,7 @@ def create(model, request):
 
 def search_table(model, search_fields, request):
     """Validate POST query and search the *search_fields columns."""
-    is_valid, request_data, debug_data = validate_post_data(request.body, ["query"])
+    is_valid, request_data, debug_data = validate_post_data(request, ["query"])
     if not is_valid:
         return create_error_payload(debug_data["data"], message=debug_data["message"])
 
