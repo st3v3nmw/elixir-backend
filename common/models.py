@@ -15,12 +15,26 @@ class BaseModel(models.Model):
     uuid = models.UUIDField(
         unique=True, default=uuid.uuid4, editable=False, primary_key=True
     )
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     @classmethod
     def create(cls, fields):
         """Wrap the cls.objects.update_or_create method to hoist errors up the call stack."""
+        direct_saves, related_saves = {}, {}
+        for key, value in fields.items():
+            if isinstance(
+                getattr(cls, key),
+                models.fields.related_descriptors.ManyToManyDescriptor,
+            ):
+                related_saves[key] = value
+            else:
+                direct_saves[key] = value
         try:
-            obj = cls.objects.update_or_create(**fields)
+            obj, _ = cls.objects.update_or_create(**direct_saves)
+            for key, id_list in related_saves.items():
+                for uuid in id_list:
+                    getattr(obj, key).add(uuid)
         except IntegrityError as e:
             return False, str(e)
         return True, obj

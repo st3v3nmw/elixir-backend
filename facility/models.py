@@ -1,6 +1,7 @@
 """This module houses models for the facility app."""
 
 from django.db import models
+from django.utils import timezone
 
 from common.constants import ENCOUNTER_STATUS, DISCHARGE_TYPES, VISIT_TYPES
 from common.models import BaseModel
@@ -40,6 +41,7 @@ class LOINC(BaseModel):
     status = models.CharField(choices=LOINC_STATUS, max_length=16)
 
     SERIALIZATION_FIELDS = [
+        "uuid",
         "code",
         "component",
         "attribute",
@@ -71,7 +73,7 @@ class ICD10Category(BaseModel):
     code = models.CharField(max_length=16, unique=True)
     title = models.TextField()
 
-    SERIALIZATION_FIELDS = ["code", "title"]
+    SERIALIZATION_FIELDS = ["uuid", "code", "title"]
 
     def __str__(self) -> str:
         """Return the string representation of the ICD10Category."""
@@ -90,7 +92,7 @@ class ICD10(BaseModel):
     code = models.CharField(max_length=16, unique=True)
     description = models.TextField()
 
-    SERIALIZATION_FIELDS = ["code", "description", "category"]
+    SERIALIZATION_FIELDS = ["uuid", "code", "description", "category"]
 
     def __str__(self) -> str:
         """Return the string representation of the ICD10 code."""
@@ -110,7 +112,7 @@ class HCPCS(BaseModel):
     description = models.TextField()
     status_code = models.CharField(max_length=4)
 
-    SERIALIZATION_FIELDS = ["code", "description", "status_code"]
+    SERIALIZATION_FIELDS = ["uuid", "code", "description", "status_code"]
 
     def __str__(self) -> str:
         """Return the string representation of the HCPCS code."""
@@ -132,7 +134,7 @@ class RxTerm(BaseModel):
     strength = models.CharField(max_length=256)
     form = models.CharField(max_length=64)
 
-    SERIALIZATION_FIELDS = ["code", "name", "route", "strength", "form"]
+    SERIALIZATION_FIELDS = ["uuid", "code", "name", "route", "strength", "form"]
 
     def __str__(self):
         """Return the string representation of the RxTerm code."""
@@ -151,7 +153,7 @@ class Visit(BaseModel):
     patient_id = models.UUIDField()
     facility_id = models.UUIDField()
     type = models.CharField(choices=VISIT_TYPES, max_length=16)
-    start = models.DateTimeField(auto_now_add=True)
+    start = models.DateTimeField(default=timezone.now)
     end = models.DateTimeField(null=True)
     primary_diagnosis = models.ForeignKey(to=ICD10, on_delete=models.RESTRICT)
     secondary_diagnoses = models.ManyToManyField(
@@ -159,7 +161,6 @@ class Visit(BaseModel):
     )
     discharge_disposition = models.CharField(choices=DISCHARGE_TYPES, max_length=64)
     invoice_number = models.CharField(max_length=32)
-    invoice_attachment = models.FileField(upload_to="attachments/")
 
     status = models.CharField(
         choices=[("DRAFT", "Draft"), ("FINALIZED", "Finalized")], max_length=16
@@ -172,14 +173,27 @@ class Visit(BaseModel):
         "type",
         "start",
         "end",
+        "primary_diagnosis_id",
+        "secondary_diagnoses",
+        "discharge_disposition",
+        "invoice_number",
+        "status",
+    ]
+    SERIALIZATION_FIELDS = [
+        "uuid",
+        "patient_id",
+        "facility_id",
+        "type",
+        "start",
+        "end",
         "primary_diagnosis",
         "secondary_diagnoses",
         "discharge_disposition",
         "invoice_number",
-        "invoice_attachment",
         "status",
+        "is_synced",
+        "encounters",
     ]
-    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["is_synced", "encounters"]
 
     @property
     def invoice_amount(self):
@@ -212,10 +226,9 @@ class Encounter(BaseModel):
     )
     status = models.CharField(choices=ENCOUNTER_STATUS, max_length=16)
     type = models.CharField(choices=ENCOUNTER_CLASSES, max_length=8)
-    start = models.DateTimeField(auto_now_add=True)
+    start = models.DateTimeField(default=timezone.now)
     end = models.DateTimeField(null=True)
     clinical_notes = models.TextField()
-    attachment = models.FileField(upload_to="attachments/")
 
     POST_REQUIRED_FIELDS = [
         "author_id",
@@ -225,18 +238,21 @@ class Encounter(BaseModel):
         "start",
         "end",
         "clinical_notes",
-        "attachment",
     ]
-    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + [
-        "charge_items",
-        "observations",
-        "prescriptions",
-    ]
+    SERIALIZATION_FIELDS = (
+        ["uuid"]
+        + POST_REQUIRED_FIELDS
+        + [
+            "services",
+            "observations",
+            "prescriptions",
+        ]
+    )
 
     @property
     def lines(self):
         """Return the encounter's invoice lines."""
-        return [*self.charge_items, *self.observations, *self.prescriptions]
+        return [*self.services, *self.observations, *self.prescriptions]
 
     @property
     def total_amount(self):
@@ -264,7 +280,7 @@ class ChargeItem(AbstractChargeItem):
     """ChargeItem model."""
 
     encounter = models.ForeignKey(
-        to=Encounter, related_name="charge_items", on_delete=models.RESTRICT
+        to=Encounter, related_name="services", on_delete=models.RESTRICT
     )
     item = models.ForeignKey(to=HCPCS, on_delete=models.RESTRICT)
 
@@ -275,7 +291,14 @@ class ChargeItem(AbstractChargeItem):
         "quantity",
         "is_paid",
     ]
-    SERIALIZATION_FIELDS = ["encounter_id", "item", "unit_price", "quantity", "is_paid"]
+    SERIALIZATION_FIELDS = [
+        "uuid",
+        "encounter_id",
+        "item",
+        "unit_price",
+        "quantity",
+        "is_paid",
+    ]
 
 
 class Observation(AbstractChargeItem):
@@ -294,7 +317,14 @@ class Observation(AbstractChargeItem):
         "unit_price",
         "is_paid",
     ]
-    SERIALIZATION_FIELDS = ["encounter_id", "loinc", "result", "unit_price", "is_paid"]
+    SERIALIZATION_FIELDS = [
+        "uuid",
+        "encounter_id",
+        "loinc",
+        "result",
+        "unit_price",
+        "is_paid",
+    ]
 
 
 class Prescription(AbstractChargeItem):
@@ -326,6 +356,7 @@ class Prescription(AbstractChargeItem):
         "is_paid",
     ]
     SERIALIZATION_FIELDS = [
+        "uuid",
         "encounter_id",
         "drug",
         "description",
