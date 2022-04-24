@@ -7,8 +7,10 @@ from tqdm import tqdm
 from facility.models import HCPCS, ICD10, ICD10Category, LOINC, RxTerm
 
 # Data obtained from
-# https://www.cms.gov/Medicare/Coding/HCPCSReleaseCodeSets/Alpha-Numeric-HCPCS-Items/2020-Alpha-Numeric-HCPCS-File
-HCPCS_SOURCE_CSV = "facility/scripts/data/HCPC2020_ANWEB_w_disclaimer.csv"
+# https://www.cms.gov/medicaremedicare-fee-service-paymentphysicianfeeschedpfs-relative-value-files/rvu22b
+# CPT codes and descriptions only are copyright 2021 American Medical Association.  All Rights Reserved.
+# Dental codes (D codes) are copyright 2022/23 American Dental Association.  All Rights Reserved.
+HCPCS_SOURCE_CSV = "facility/scripts/data/PPRRVU22_APR.csv"
 
 # Data obtained from https://github.com/k4m1113/ICD-10-CSV
 ICD10_SOURCE_CSV = "facility/scripts/data/icd10_codes.csv"
@@ -26,10 +28,14 @@ def run():
     with open(HCPCS_SOURCE_CSV, "r") as f:
         rows = list(csv.DictReader(f))
         for row in tqdm(rows):
+            code = row["HCPCS"].strip()
+            mod = row["MOD"].strip()
+            if mod:
+                code += f"-{mod}"
             HCPCS.objects.get_or_create(
-                code=row["HCPC"].strip(),
-                seq_num=row["SEQNUM"].strip(),
-                description=row["LONG DESCRIPTION"].strip(),
+                code=code,
+                description=row["DESCRIPTION"].strip(),
+                status_code=row["STATUS CODE"].strip(),
             )
 
     print(f"Populating ICD10 tables from {ICD10_SOURCE_CSV}...")

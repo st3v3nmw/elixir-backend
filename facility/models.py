@@ -106,19 +106,15 @@ class HCPCS(BaseModel):
     Useful for billing.
     """
 
-    # HCPCS Code
-    code = models.CharField(max_length=16)
-    seq_num = models.CharField(max_length=8, default="0010")
+    code = models.CharField(max_length=16, unique=True)
     description = models.TextField()
+    status_code = models.CharField(max_length=4)
 
-    SERIALIZATION_FIELDS = ["code", "seq_num", "description"]
-
-    class Meta:  # noqa
-        unique_together = ("code", "seq_num")
+    SERIALIZATION_FIELDS = ["code", "description", "status_code"]
 
     def __str__(self) -> str:
         """Return the string representation of the HCPCS code."""
-        return f"{self.code}:{self.seq_num} {self.description} ({self.uuid})"
+        return f"{self.code} {self.description} {self.status_code} ({self.uuid})"
 
 
 class RxTerm(BaseModel):
@@ -161,11 +157,13 @@ class Visit(BaseModel):
     secondary_diagnoses = models.ManyToManyField(
         to=ICD10, related_name="secondary_diagnoses"
     )
-    discharge_disposition = models.CharField(choices=DISCHARGE_TYPES)
+    discharge_disposition = models.CharField(choices=DISCHARGE_TYPES, max_length=64)
     invoice_number = models.CharField(max_length=32)
     invoice_attachment = models.FileField(upload_to="attachments/")
 
-    status = models.CharField(choices=[("DRAFT", "Draft"), ("FINALIZED", "Finalized")])
+    status = models.CharField(
+        choices=[("DRAFT", "Draft"), ("FINALIZED", "Finalized")], max_length=16
+    )
     is_synced = models.BooleanField(default=False)
 
     POST_REQUIRED_FIELDS = [
@@ -230,33 +228,20 @@ class Encounter(BaseModel):
         "attachment",
     ]
     SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + [
-        "observations",
         "charge_items",
+        "observations",
         "prescriptions",
     ]
 
     @property
     def lines(self):
         """Return the encounter's invoice lines."""
-        return [*self.charge_items, *self.prescriptions]
+        return [*self.charge_items, *self.observations, *self.prescriptions]
 
     @property
     def total_amount(self):
         """Calculate the encounter's total invoice amount."""
         return sum(line.total for line in self.lines)
-
-
-class Observation(BaseModel):
-    """Observation model."""
-
-    loinc = models.ForeignKey(to=LOINC, on_delete=models.RESTRICT)
-    encounter = models.ForeignKey(
-        to=Encounter, related_name="observations", on_delete=models.RESTRICT
-    )
-    result = models.CharField(max_length=256, null=True)
-
-    POST_REQUIRED_FIELDS = ["loinc_id", "encounter_id", "result"]
-    SERIALIZATION_FIELDS = ["loinc", "encounter_id", "result"]
 
 
 class AbstractChargeItem(BaseModel):
@@ -291,6 +276,25 @@ class ChargeItem(AbstractChargeItem):
         "is_paid",
     ]
     SERIALIZATION_FIELDS = ["encounter_id", "item", "unit_price", "quantity", "is_paid"]
+
+
+class Observation(AbstractChargeItem):
+    """Observation model."""
+
+    encounter = models.ForeignKey(
+        to=Encounter, related_name="observations", on_delete=models.RESTRICT
+    )
+    loinc = models.ForeignKey(to=LOINC, on_delete=models.RESTRICT)
+    result = models.CharField(max_length=256, null=True)
+
+    POST_REQUIRED_FIELDS = [
+        "encounter_id",
+        "loinc_id",
+        "result",
+        "unit_price",
+        "is_paid",
+    ]
+    SERIALIZATION_FIELDS = ["encounter_id", "loinc", "result", "unit_price", "is_paid"]
 
 
 class Prescription(AbstractChargeItem):
