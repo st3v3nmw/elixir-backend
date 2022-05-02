@@ -133,16 +133,14 @@ class Record(BaseModel):
 
     POST_REQUIRED_FIELDS = [
         "uuid",
-        "owner_id",
         "patient_id",
         "creation_time",
-        "released",
+        "is_released",
     ]
     SERIALIZATION_FIELDS = [
         "uuid",
-        "owner",
         "patient_id",
-        "released",
+        "is_released",
         "creation_time",
         "ratings",
         "consent_requests",

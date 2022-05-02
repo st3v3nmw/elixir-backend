@@ -21,23 +21,36 @@ class BaseModel(models.Model):
     @classmethod
     def create(cls, fields):
         """Wrap the cls.objects.update_or_create method to hoist errors up the call stack."""
-        direct_saves, related_saves = {}, {}
+        direct_saves, many_to_many_saves, foreign_key_saves = {}, {}, {}
+        foreign_key_models = {
+            r.related_name: r.related_model for r in cls._meta.related_objects
+        }
+
         for key, value in fields.items():
-            if isinstance(
+            if key in foreign_key_models:
+                foreign_key_saves[key] = value
+            elif isinstance(
                 getattr(cls, key),
                 models.fields.related_descriptors.ManyToManyDescriptor,
             ):
-                related_saves[key] = value
+                many_to_many_saves[key] = value
             else:
                 direct_saves[key] = value
+
         try:
-            obj, _ = cls.objects.update_or_create(**direct_saves)
-            for key, id_list in related_saves.items():
+            parent_obj, _ = cls.objects.update_or_create(**direct_saves)
+            for field, objects in foreign_key_saves.items():
+                for object in objects:
+                    if not isinstance(value, str):
+                        object[f'{parent_obj._meta.model_name}_id'] = parent_obj.uuid
+                        created, value = foreign_key_models[field].create(object)
+                    getattr(parent_obj, field).add(value)
+            for field, id_list in many_to_many_saves.items():
                 for uuid in id_list:
-                    getattr(obj, key).add(uuid)
+                    getattr(parent_obj, field).add(uuid)
         except IntegrityError as e:
             return False, str(e)
-        return True, obj
+        return True, parent_obj
 
     @staticmethod
     def preprocess_choices(choices):

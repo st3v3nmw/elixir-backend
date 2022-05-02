@@ -1,5 +1,7 @@
 """This module houses API endpoints for the facility app."""
 
+import os
+
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
@@ -20,13 +22,22 @@ from common.payload import create_success_payload
 from common.utils import create, search_table
 
 
+index_base_url = (
+    "http://"
+    + os.environ["REGISTRY_SERVER_IP"]
+    + ":"
+    + os.environ["REGISTRY_SERVER_PORT"]
+    + "/api/index/"
+)
+
+
 # Coding - Search
 
 
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("INDEX")
+@require_service("FACILITY")
 def search_icd10(request):
     """Search for an ICD10 code."""
     return search_table(ICD10, ["code", "description", "category__title"], request)
@@ -35,7 +46,7 @@ def search_icd10(request):
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("INDEX")
+@require_service("FACILITY")
 def search_loinc(request):
     """Search for a LOINC code."""
     return search_table(LOINC, ["code", "component", "long_common_name"], request)
@@ -43,8 +54,19 @@ def search_loinc(request):
 
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
+@require_GET
+@require_service("FACILITY")
+def get_arrival_measurements(request):
+    codes = LOINC.objects.filter(code__in=["3141-9", "3137-7", "8310-5"]).order_by(
+        "long_common_name"
+    )
+    return create_success_payload([code.serialize() for code in codes])
+
+
+@require_roles(["PRACTITIONER"])
+@csrf_exempt
 @require_POST
-@require_service("INDEX")
+@require_service("FACILITY")
 def search_hcpcs(request):
     """Search for a HCPCS code."""
     return search_table(HCPCS, ["code", "description"], request)
@@ -53,7 +75,7 @@ def search_hcpcs(request):
 @require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
-@require_service("INDEX")
+@require_service("FACILITY")
 def search_rxterm(request):
     """Search for a RxTerm code."""
     return search_table(RxTerm, ["code", "name"], request)
@@ -74,7 +96,7 @@ def create_visit(request):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
-@require_service("INDEX")
+@require_service("FACILITY")
 def get_visit(request, visit_id):
     """GET a visit."""
     visit = get_object_or_404(Visit, uuid=visit_id)
@@ -84,7 +106,7 @@ def get_visit(request, visit_id):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
-@require_service("INDEX")
+@require_service("FACILITY")
 def list_visits(request, practitioner_id):
     """List all visits a practitioner has been involved in."""
     visits = Visit.objects.filter(encounters__author_id=practitioner_id)
@@ -106,7 +128,7 @@ def create_encounter(request):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
-@require_service("INDEX")
+@require_service("FACILITY")
 def get_encounter(request, encounter_id):
     """GET an encounter."""
     encounter = get_object_or_404(Encounter, uuid=encounter_id)
@@ -116,7 +138,7 @@ def get_encounter(request, encounter_id):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
-@require_service("INDEX")
+@require_service("FACILITY")
 def list_encounters(request, practitioner_id):
     """List all encounters a practitioner has authored."""
     encounters = Encounter.objects.filter(author_id=practitioner_id)

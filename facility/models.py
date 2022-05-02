@@ -1,10 +1,21 @@
 """This module houses models for the facility app."""
 
+import os
+import threading
+
 from django.db import models
 from django.utils import timezone
 
 from common.constants import ENCOUNTER_STATUS, DISCHARGE_TYPES, VISIT_TYPES
 from common.models import BaseModel
+
+index_base_url = (
+    "http://"
+    + os.environ["REGISTRY_SERVER_IP"]
+    + ":"
+    + os.environ["REGISTRY_SERVER_PORT"]
+    + "/api/index/"
+)
 
 # Coding
 
@@ -160,7 +171,7 @@ class Visit(BaseModel):
         to=ICD10, related_name="secondary_diagnoses"
     )
     discharge_disposition = models.CharField(choices=DISCHARGE_TYPES, max_length=64)
-    invoice_number = models.CharField(max_length=32)
+    invoice_number = models.CharField(max_length=32, unique=True)
 
     status = models.CharField(
         choices=[("DRAFT", "Draft"), ("FINALIZED", "Finalized")], max_length=16
@@ -199,6 +210,34 @@ class Visit(BaseModel):
     def invoice_amount(self):
         """Calculate total invoice amount for the visit."""
         return sum(encounter.total for encounter in self.encounters)
+
+    def index_record(self, auth_token):
+        from common.utils import call_api
+
+        def index_record_inner(visit, auth_token):
+            response = call_api(
+                index_base_url + "records/new/",
+                "POST",
+                auth_token,
+                {
+                    "uuid": str(visit.uuid),
+                    "facility_id": visit.facility_id,
+                    "patient_id": self.patient_id,
+                    "creation_time": str(visit.created),
+                    "is_released": True,
+                },
+            )
+
+            if response["status"] == "success":
+                visit.is_synced = True
+                visit.save()
+
+        thread = threading.Thread(
+            target=index_record_inner,
+            args=(self, auth_token),
+        )
+        thread.daemon = True
+        thread.start()
 
 
 class Encounter(BaseModel):

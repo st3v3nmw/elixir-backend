@@ -2,9 +2,11 @@
 
 import json
 from math import sqrt
+import requests
 
 from django.contrib.postgres.search import SearchVector
 
+from facility.models import Visit
 from common.payload import create_error_payload, create_success_payload, ErrorCode
 
 
@@ -39,6 +41,8 @@ def create(model, request):
 
     success, result = model.create(request_data)
     if success:
+        if isinstance(result, Visit):
+            result.index_record(request.token["raw"])
         return create_success_payload(
             result.serialize(), message="Created successfully."
         )
@@ -61,6 +65,22 @@ def search_table(model, search_fields, request):
 def error404(request, exception):
     """Return an error 404 HTTP payload."""
     return create_error_payload({}, ErrorCode.DOES_NOT_EXIST, status=404)
+
+
+def call_api(
+    endpoint: str,
+    method: str,
+    auth_token: str,
+    body={},
+):
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    if method == "GET":
+        r = requests.get(endpoint, headers=headers)
+    elif method == "POST":
+        r = requests.post(endpoint, headers=headers, json=body)
+    response = r.json()
+    print(response)
+    return response
 
 
 def parameterized(dec):

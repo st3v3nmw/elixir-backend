@@ -111,7 +111,7 @@ def search_practitioners(request):
 # Records
 
 
-@require_roles(["FACILITY"])
+@require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
 @require_service("INDEX")

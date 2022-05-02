@@ -56,6 +56,7 @@ class LoginRequiredMiddleware:
             decoded_token = jwt.decode(
                 token[7:], os.environ["JWT_PUBLIC_KEY"], algorithms=["RS384"]
             )
+            decoded_token['raw'] = token[7:]
         except jwt.exceptions.DecodeError:
             return create_error_payload({}, message=ErrorCode.UNAUTHORIZED, status=401)
 
