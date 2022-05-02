@@ -143,7 +143,7 @@ def get_record(request, doc_id):
 @require_service("INDEX")
 def list_records(request, user_id):
     """List all records belonging to a particular user."""
-    records = Record.objects.filter(user_id=user_id)
+    records = Record.objects.filter(patient=user_id)
     return create_success_payload([record.serialize() for record in records])
 
 

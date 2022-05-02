@@ -204,6 +204,7 @@ class Visit(BaseModel):
         "status",
         "is_synced",
         "encounters",
+        "created",
     ]
 
     @property
@@ -224,6 +225,7 @@ class Visit(BaseModel):
                     "facility_id": visit.facility_id,
                     "patient_id": self.patient_id,
                     "creation_time": str(visit.created),
+                    "visit_type": self.type,
                     "is_released": True,
                 },
             )
@@ -281,11 +283,7 @@ class Encounter(BaseModel):
     SERIALIZATION_FIELDS = (
         ["uuid"]
         + POST_REQUIRED_FIELDS
-        + [
-            "services",
-            "observations",
-            "prescriptions",
-        ]
+        + ["services", "observations", "prescriptions", "created"]
     )
 
     @property
@@ -337,6 +335,7 @@ class ChargeItem(AbstractChargeItem):
         "unit_price",
         "quantity",
         "is_paid",
+        "created",
     ]
 
 
@@ -363,6 +362,7 @@ class Observation(AbstractChargeItem):
         "result",
         "unit_price",
         "is_paid",
+        "created",
     ]
 
 
@@ -404,4 +404,5 @@ class Prescription(AbstractChargeItem):
         "is_paid",
         "unit_price",
         "quantity",
+        "created",
     ]

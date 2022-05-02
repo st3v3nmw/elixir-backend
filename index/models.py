@@ -12,6 +12,7 @@ from common.constants import (
     COUNTIES,
     PRACTITIONER_TYPES,
     REGIONS,
+    VISIT_TYPES,
 )
 from common.utils import ci_lower_bound
 
@@ -54,6 +55,7 @@ class Facility(Entity):
         "api_base_url",
         "date_joined",
         "is_active",
+        "date_joined",
     ]
 
     @property
@@ -74,7 +76,9 @@ class Practitioner(BaseModel):
     type = models.CharField(choices=PRACTITIONER_TYPES, max_length=32)
 
     VALIDATION_FIELDS = ["user_id", "type"]
-    SERIALIZATION_FIELDS = ["uuid"] + VALIDATION_FIELDS + ["employment_history"]
+    SERIALIZATION_FIELDS = (
+        ["uuid"] + VALIDATION_FIELDS + ["created", "employment_history"]
+    )
 
     def fhir_serialize(self):
         """Serialize self as a Practitioner FHIR resource."""
@@ -123,38 +127,47 @@ class Tenure(BaseModel):
 class Record(BaseModel):
     """Record model."""
 
+    VISIT_TYPES = BaseModel.preprocess_choices(VISIT_TYPES)
+
     facility = models.ForeignKey(
         Facility, related_name="records", on_delete=models.RESTRICT
     )
     patient = models.ForeignKey(User, related_name="records", on_delete=models.RESTRICT)
     creation_time = models.DateTimeField()  # Creation time at facility
+    visit_type = models.CharField(choices=VISIT_TYPES, max_length=16)
     # doctrine of professional discretion
     is_released = models.BooleanField(default=True)
 
     POST_REQUIRED_FIELDS = [
         "uuid",
+        "facility_id",
         "patient_id",
         "creation_time",
+        "visit_type",
         "is_released",
     ]
     SERIALIZATION_FIELDS = [
         "uuid",
+        "facility",
         "patient_id",
         "is_released",
         "creation_time",
+        "visit_type",
         "ratings",
         "consent_requests",
+        "rating",
+        "access_logs",
     ]
 
     @property
     def rating(self):
         """Calculate the rating for this record using Wilson Score Intervals."""
-        n_ratings = self.ratings.objects.all().count()
-        n_positive_accurate = self.ratings.objects.filter(is_accurate=True).count()
-        n_positive_complete = self.ratings.objects.filter(is_complete=True).count()
+        n_ratings = self.ratings.all().count()
+        n_positive_accurate = self.ratings.all().filter(is_accurate=True).count()
+        n_positive_complete = self.ratings.all().filter(is_complete=True).count()
         return (
-            ci_lower_bound(n_positive_accurate, n_ratings, 0.96)
-            + ci_lower_bound(n_positive_complete, n_ratings, 0.96)
+            ci_lower_bound(n_positive_accurate, n_ratings)
+            + ci_lower_bound(n_positive_complete, n_ratings)
         ) / 2
 
 
@@ -171,7 +184,7 @@ class RecordRating(BaseModel):
     review = models.TextField()
 
     POST_REQUIRED_FIELDS = ["record_id", "rater_id", "rating", "review"]
-    SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater"]
+    SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater", "created"]
 
 
 class ConsentRequest(BaseModel):
@@ -193,7 +206,9 @@ class ConsentRequest(BaseModel):
     )
     requestor = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
     request_note = models.TextField()
-    status = models.TextField(choices=CONSENT_REQUEST_STATUSES, max_length=16)
+    status = models.CharField(
+        choices=CONSENT_REQUEST_STATUSES, max_length=16, default="PENDING"
+    )
 
     POST_REQUIRED_FIELDS = [
         "records",
@@ -202,7 +217,13 @@ class ConsentRequest(BaseModel):
         "request_note",
         "status",
     ]
-    SERIALIZATION_FIELDS = POST_REQUIRED_FIELDS + ["transition_logs"]
+    SERIALIZATION_FIELDS = [
+        "visit_types",
+        "requestor",
+        "request_note",
+        "created",
+        "transition_logs",
+    ]
 
 
 class ConsentRequestTransition(BaseModel):
@@ -240,7 +261,7 @@ class AccessLog(BaseModel):
         Record, related_name="access_logs", on_delete=models.RESTRICT
     )
     practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
-    access_time = models.DateTimeField()
+    access_time = models.DateTimeField(auto_now_add=True)
 
-    POST_REQUESTED_FIELDS = ["record_id", "practitioner_id", "access_time"]
-    SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS
+    POST_REQUESTED_FIELDS = ["record_id", "practitioner_id"]
+    SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS + ["access_time"]
