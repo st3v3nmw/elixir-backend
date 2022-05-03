@@ -362,6 +362,7 @@ class Observation(AbstractChargeItem):
         "result",
         "unit_price",
         "is_paid",
+        "quantity",
         "created",
     ]
 

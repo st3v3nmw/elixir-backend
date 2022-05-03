@@ -1,6 +1,7 @@
 """This module houses models for the facility app."""
 
 from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
 
@@ -76,9 +77,7 @@ class Practitioner(BaseModel):
     type = models.CharField(choices=PRACTITIONER_TYPES, max_length=32)
 
     VALIDATION_FIELDS = ["user_id", "type"]
-    SERIALIZATION_FIELDS = (
-        ["uuid"] + VALIDATION_FIELDS + ["created", "employment_history"]
-    )
+    SERIALIZATION_FIELDS = ["uuid", "user"] + VALIDATION_FIELDS + ["created"]
 
     def fhir_serialize(self):
         """Serialize self as a Practitioner FHIR resource."""
@@ -114,7 +113,7 @@ class Tenure(BaseModel):
     end = models.DateField(null=True)
 
     VALIDATION_FIELDS = ["practitioner_id", "facility_id", "start"]
-    SERIALIZATION_FIELDS = ["uuid", "facility_id", "start", "end"]
+    SERIALIZATION_FIELDS = ["uuid", "facility", "start", "end", "practitioner"]
 
     class Meta:  # noqa
         unique_together = ("practitioner", "facility", "start")
@@ -161,13 +160,10 @@ class Record(BaseModel):
 
     @property
     def rating(self):
-        """Calculate the rating for this record using Wilson Score Intervals."""
-        n_ratings = self.ratings.all().count()
-        n_positive_accurate = self.ratings.all().filter(is_accurate=True).count()
-        n_positive_complete = self.ratings.all().filter(is_complete=True).count()
+        """Calculate the average rating for this record."""
         return (
-            ci_lower_bound(n_positive_accurate, n_ratings)
-            + ci_lower_bound(n_positive_complete, n_ratings)
+            self.ratings.aggregate(models.Avg("accuracy"))["accuracy__avg"]
+            + self.ratings.aggregate(models.Avg("completeness"))["completeness__avg"]
         ) / 2
 
 
@@ -177,14 +173,30 @@ class RecordRating(BaseModel):
     record = models.ForeignKey(
         Record, related_name="ratings", on_delete=models.RESTRICT
     )
-    encounter = models.UUIDField()
     rater = models.ForeignKey(User, related_name="ratings", on_delete=models.RESTRICT)
-    is_accurate = models.BooleanField()
-    is_complete = models.BooleanField()
+    accuracy = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    completeness = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
     review = models.TextField()
 
-    POST_REQUIRED_FIELDS = ["record_id", "rater_id", "rating", "review"]
-    SERIALIZATION_FIELDS = ["record_id", "rating", "review", "rater", "created"]
+    POST_REQUIRED_FIELDS = [
+        "record_id",
+        "rater_id",
+        "accuracy",
+        "completeness",
+        "review",
+    ]
+    SERIALIZATION_FIELDS = [
+        "record_id",
+        "accuracy",
+        "completeness",
+        "review",
+        "rater",
+        "created",
+    ]
 
 
 class ConsentRequest(BaseModel):
@@ -263,5 +275,5 @@ class AccessLog(BaseModel):
     practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
     access_time = models.DateTimeField(auto_now_add=True)
 
-    POST_REQUESTED_FIELDS = ["record_id", "practitioner_id"]
+    POST_REQUESTED_FIELDS = ["record_id", "practitioner"]
     SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS + ["access_time"]

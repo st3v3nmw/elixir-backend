@@ -57,7 +57,7 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
     SERIALIZATION_FIELDS = (
         ["uuid", USERNAME_FIELD]
         + REQUIRED_FIELDS
-        + ["address", "records", "relatives", "date_joined", "is_active"]
+        + ["address", "relatives", "date_joined", "is_active"]
     )
 
     class Meta:  # noqa
