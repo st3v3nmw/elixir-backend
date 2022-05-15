@@ -215,11 +215,11 @@ class Visit(BaseModel):
     def index_record(self, auth_token):
         from common.utils import call_api
 
-        def index_record_inner(visit, auth_token):
+        def index_record_inner(visit, raw_auth_token):
             response = call_api(
                 index_base_url + "records/new/",
                 "POST",
-                auth_token,
+                raw_auth_token,
                 {
                     "uuid": str(visit.uuid),
                     "facility_id": visit.facility_id,
@@ -227,6 +227,13 @@ class Visit(BaseModel):
                     "creation_time": str(visit.created),
                     "visit_type": self.type,
                     "is_released": True,
+                    "consent_requests": [
+                        {
+                            "requestor_id": str(visit.encounters.all()[0].author_id),
+                            "request_note": "Automatically granted to record author.",
+                            "status": "APPROVED",
+                        },
+                    ],
                 },
             )
 

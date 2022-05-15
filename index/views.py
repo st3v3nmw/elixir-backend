@@ -1,6 +1,10 @@
 """This module houses API endpoints for the index app."""
 
+import uuid
+from datetime import timedelta
+
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
@@ -37,7 +41,7 @@ def get_facility(request, pk):
 @require_service("INDEX")
 def list_facilities(request):
     """List all registered facilities."""
-    facilities = Facility.objects.all()
+    facilities = Facility.objects.all().order_by("name")
     return create_success_payload([facility.serialize() for facility in facilities])
 
 
@@ -53,7 +57,7 @@ def search_facilities(request):
 # Practitioner
 
 
-@require_roles(["PRACTITIONER"])
+@require_roles(["PATIENT"])
 @csrf_exempt
 @require_POST
 @require_service("INDEX")
@@ -74,13 +78,17 @@ def register_tenure(request):
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
 @require_service("INDEX")
-def get_practitioner(request, pk):
+def get_practitioner(request, user_id):
     """GET a practitioner."""
-    practitioner = get_object_or_404(Practitioner, uuid=pk)
+    practitioner = get_object_or_404(Practitioner, user__uuid=user_id)
+    latest_tenure = practitioner.employment_history.latest("start")
+    extra = practitioner.serialize()
+    latest_tenure.SERIALIZATION_FIELDS = ["uuid", "facility", "start", "end"]
+    extra["latest_tenure"] = latest_tenure.serialize()
     return create_success_payload(
         {
             "fhir": practitioner.fhir_serialize(),
-            "extra": practitioner.serialize(),
+            "extra": extra,
         }
     )
 
@@ -143,8 +151,25 @@ def get_record(request, doc_id):
 @require_service("INDEX")
 def list_records(request, user_id):
     """List all records belonging to a particular user."""
-    records = Record.objects.filter(patient=user_id)
-    return create_success_payload([record.serialize() for record in records])
+    records = list(map(lambda x: x.serialize(), Record.objects.filter(patient=user_id)))
+
+    if "PRACTITIONER" in request.token["roles"]:
+        tenure = Tenure.objects.get(practitioner__user=request.token["sub"])
+        for record in records:
+            cnr_q = ConsentRequest.objects.filter(
+                record=record["uuid"],
+                requestor=tenure,
+            )
+            if cnr_q.filter(status="APPROVED").exists():
+                record["access_status"] = "APPROVED"
+            elif cnr_q.filter(status="PENDING").exists():
+                record["access_status"] = "PENDING"
+            else:
+                record["access_status"] = "NONE"
+    else:
+        for record in records:
+            record["access_status"] = "APPROVED"
+    return create_success_payload(records)
 
 
 # Consent
@@ -179,6 +204,26 @@ def list_consent_requests(request, record_id):
     return create_success_payload([request.serialize() for request in requests])
 
 
+@require_roles(["PRACTITIONER"])
+@csrf_exempt
+@require_GET
+@require_service("INDEX")
+def list_tenure_consent_requests(request, tenure_id):
+    requests = ConsentRequest.objects.filter(requestor=tenure_id)
+    return create_success_payload([request.serialize() for request in requests])
+
+
+@require_roles(["PATIENT"])
+@csrf_exempt
+@require_GET
+@require_service("INDEX")
+def list_user_consent_requests(request, user_id):
+    requests = ConsentRequest.objects.filter(record__patient=user_id).order_by(
+        "-created"
+    )
+    return create_success_payload([request.serialize() for request in requests])
+
+
 @require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_POST
@@ -210,7 +255,28 @@ def create_consent_request_transition(request):
 @require_service("INDEX")
 def create_access_log(request):
     """Create an access log entry."""
-    return create(AccessLog, request)
+    is_valid, request_data, debug_data = validate_post_data(
+        request, AccessLog.POST_REQUIRED_FIELDS
+    )
+    if not is_valid:
+        return create_error_payload(debug_data["data"], message=debug_data["message"])
+    latest_log_entry = AccessLog.objects.filter(
+        record_id=request_data["record_id"],
+        practitioner=request_data["practitioner_id"],
+    )
+    if len(latest_log_entry) == 0 or timezone.now() - latest_log_entry.latest(
+        "created"
+    ).created > timedelta(hours=1):
+        request_data["uuid"] = uuid.uuid4()
+        success, result = AccessLog.create(request_data)
+        if success:
+            return create_success_payload(
+                result.serialize(), message="Created successfully."
+            )
+        else:
+            return create_error_payload(message=result)
+    else:
+        return create_success_payload(latest_log_entry.latest("created").serialize())
 
 
 @require_roles(["PATIENT"])

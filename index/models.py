@@ -15,7 +15,6 @@ from common.constants import (
     REGIONS,
     VISIT_TYPES,
 )
-from common.utils import ci_lower_bound
 
 # Health Facility
 
@@ -117,7 +116,7 @@ class Tenure(BaseModel):
 
     class Meta:  # noqa
         unique_together = ("practitioner", "facility", "start")
-        ordering = ["-start"]
+        ordering = ["start"]
 
 
 # Records
@@ -161,10 +160,13 @@ class Record(BaseModel):
     @property
     def rating(self):
         """Calculate the average rating for this record."""
-        return (
-            self.ratings.aggregate(models.Avg("accuracy"))["accuracy__avg"]
-            + self.ratings.aggregate(models.Avg("completeness"))["completeness__avg"]
-        ) / 2
+        avg_accuracy = (
+            self.ratings.aggregate(models.Avg("accuracy"))["accuracy__avg"] or 0
+        )
+        avg_completeness = (
+            self.ratings.aggregate(models.Avg("completeness"))["completeness__avg"] or 0
+        )
+        return f"{avg_accuracy},{avg_completeness}"
 
 
 class RecordRating(BaseModel):
@@ -204,17 +206,8 @@ class ConsentRequest(BaseModel):
 
     CONSENT_REQUEST_STATUSES = BaseModel.preprocess_choices(CONSENT_REQUEST_STATUSES)
 
-    records = models.ManyToManyField(to=Record, related_name="consent_requests")
-    visit_types = ArrayField(
-        models.CharField(
-            choices=[
-                ("OUTPATIENT", "Outpatient"),
-                ("INPATIENT", "Inpatient"),
-                ("OPTICAL", "Optical"),
-                ("DENTAL", "Dental"),
-            ],
-            max_length=16,
-        )
+    record = models.ForeignKey(
+        Record, on_delete=models.RESTRICT, related_name="consent_requests"
     )
     requestor = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
     request_note = models.TextField()
@@ -223,16 +216,15 @@ class ConsentRequest(BaseModel):
     )
 
     POST_REQUIRED_FIELDS = [
-        "records",
-        "visit_types",
-        "requestor",
+        "record_id",
+        "requestor_id",
         "request_note",
         "status",
     ]
     SERIALIZATION_FIELDS = [
-        "visit_types",
         "requestor",
         "request_note",
+        "status",
         "created",
         "transition_logs",
     ]
@@ -275,5 +267,5 @@ class AccessLog(BaseModel):
     practitioner = models.ForeignKey(Tenure, on_delete=models.RESTRICT)
     access_time = models.DateTimeField(auto_now_add=True)
 
-    POST_REQUESTED_FIELDS = ["record_id", "practitioner"]
-    SERIALIZATION_FIELDS = POST_REQUESTED_FIELDS + ["access_time"]
+    POST_REQUESTED_FIELDS = ["record_id", "practitioner_id"]
+    SERIALIZATION_FIELDS = ["record_id", "practitioner"] + ["access_time"]

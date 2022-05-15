@@ -97,19 +97,3 @@ def parameterized(dec):
         return repl
 
     return layer
-
-
-def ci_lower_bound(n_positive, n):
-    """
-    Find the Wilson Score Interval for n_positive/n ratings.
-
-    https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
-    https://stackoverflow.com/a/10029645
-    """
-    if n == 0:
-        return 0
-    z = 1.96  # 95% confidence level
-    phat = 1.0 * n_positive / n
-    return (
-        phat + z * z / (2 * n) - z * sqrt((phat * (1 - phat) + z * z / (4 * n)) / n)
-    ) / (1 + z * z / n)

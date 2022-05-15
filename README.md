@@ -18,4 +18,4 @@
 3. Create context for remote: `docker context create remote --docker "host=ssh://user@ip"`
 4. Change docker context: `docker context use remote`
 5. Deploy: `COMPOSE_DOCKER_CLI_BUILD=0 docker-compose up -d --build`
-6. Confirm that containers are up & running: `docker compose ps` (`docker-compose logs -f` to check logs)
+6. Confirm that containers are up & running: `docker ps` (`docker-compose logs -f` to check logs)
