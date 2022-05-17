@@ -11,7 +11,6 @@ from django.views.decorators.http import require_GET, require_POST
 from .models import (
     AccessLog,
     ConsentRequest,
-    ConsentRequestTransition,
     Facility,
     Practitioner,
     Record,
@@ -184,32 +183,40 @@ def create_consent_request(request):
     return create(ConsentRequest, request)
 
 
-@require_roles(["PRACTITIONER"])
+@require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
 @require_service("INDEX")
 def get_consent_request(request, request_id):
     """GET a consent request."""
-    request = get_object_or_404(ConsentRequest, uuid=request_id)
-    return create_success_payload(request.serialize())
+    consent_request = get_object_or_404(ConsentRequest, uuid=request_id)
+    return create_success_payload(consent_request.serialize())
 
 
-@require_roles(["PRACTITIONER"])
+@require_roles(["PATIENT", "PRACTITINER"])
+@csrf_exempt
+@require_POST
+@require_service("INDEX")
+def update_consent_request(request, request_id):
+    """UPDATE the status of a consent request."""
+    consent_request = get_object_or_404(ConsentRequest, uuid=request_id)
+    is_valid, request_data, debug_data = validate_post_data(request, ["to_state"])
+    if not is_valid:
+        return create_error_payload(debug_data["data"], message=debug_data["message"])
+
+    consent_request.status = request_data["to_state"]
+    consent_request.save()
+    consent_request.refresh_from_db()
+    return create_success_payload(consent_request.serialize())
+
+
+@require_roles(["PATIENT", "PRACTITIONER"])
 @csrf_exempt
 @require_GET
 @require_service("INDEX")
 def list_consent_requests(request, record_id):
     """List all consent requests for a particular record."""
     requests = ConsentRequest.objects.filter(record__in=record_id)
-    return create_success_payload([request.serialize() for request in requests])
-
-
-@require_roles(["PRACTITIONER"])
-@csrf_exempt
-@require_GET
-@require_service("INDEX")
-def list_tenure_consent_requests(request, tenure_id):
-    requests = ConsentRequest.objects.filter(requestor=tenure_id)
     return create_success_payload([request.serialize() for request in requests])
 
 
@@ -222,28 +229,6 @@ def list_user_consent_requests(request, user_id):
         "-created"
     )
     return create_success_payload([request.serialize() for request in requests])
-
-
-@require_roles(["PATIENT", "PRACTITIONER"])
-@csrf_exempt
-@require_POST
-@require_service("INDEX")
-def create_consent_request_transition(request):
-    """Create a consent request transition."""
-    is_valid, request_data, debug_data = validate_post_data(
-        request, ["request_id", "to_state"]
-    )
-    if not is_valid:
-        return create_error_payload(debug_data["data"], message=debug_data["message"])
-
-    request = get_object_or_404(ConsentRequest, uuid=request_data["request_id"])
-    transition = ConsentRequestTransition.objects.create(
-        consent_request=request,
-        from_state=request.status,
-        to_state=request_data["to_state"],
-    )
-    request.status = request_data["to_state"]
-    return create_success_payload(transition.serialize(), message="Created.")
 
 
 # Access Logs
@@ -311,7 +296,7 @@ def get_patient(request, patient_id):
     return create_success_payload(patient.fhir_serialize())
 
 
-# @require_roles(["PRACTITIONER"])
+@require_roles(["PRACTITIONER"])
 @csrf_exempt
 @require_POST
 @require_service("INDEX")

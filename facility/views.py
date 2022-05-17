@@ -57,9 +57,18 @@ def search_loinc(request):
 @require_GET
 @require_service("FACILITY")
 def get_arrival_measurements(request):
-    codes = LOINC.objects.filter(code__in=["3141-9", "3137-7", "8310-5"]).order_by(
-        "long_common_name"
-    )
+    codes = LOINC.objects.filter(
+        code__in=["3141-9", "3137-7", "8310-5", "8480-6", "8462-4", "8867-4", "9279-1"]
+    ).order_by("long_common_name")
+    return create_success_payload([code.serialize() for code in codes])
+
+
+@require_roles(["PRACTITIONER"])
+@csrf_exempt
+@require_GET
+@require_service("FACILITY")
+def get_consultation_codes(request):
+    codes = [HCPCS.objects.get(code="99241"), HCPCS.objects.get(code="99251")]  # OP, IP
     return create_success_payload([code.serialize() for code in codes])
 
 

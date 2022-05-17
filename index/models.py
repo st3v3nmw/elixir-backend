@@ -1,8 +1,8 @@
 """This module houses models for the facility app."""
 
-from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.dispatch import receiver
 from django.utils import timezone
 
 from authentication.models import User
@@ -192,6 +192,7 @@ class RecordRating(BaseModel):
         "review",
     ]
     SERIALIZATION_FIELDS = [
+        "uuid",
         "record_id",
         "accuracy",
         "completeness",
@@ -222,8 +223,10 @@ class ConsentRequest(BaseModel):
         "status",
     ]
     SERIALIZATION_FIELDS = [
+        "uuid",
         "requestor",
         "request_note",
+        "record_id",
         "status",
         "created",
         "transition_logs",
@@ -251,11 +254,30 @@ class ConsentRequestTransition(BaseModel):
     transition_time = models.DateTimeField(auto_now_add=True)
 
     SERIALIZATION_FIELDS = [
+        "uuid",
         "consent_request_id",
         "from_state",
         "to_state",
         "transition_time",
     ]
+
+
+@receiver(
+    models.signals.post_save,
+    sender=ConsentRequest,
+    dispatch_uid="update_status",
+)
+def update_consent_request_status(sender, instance, **kwargs):
+    existing_logs = ConsentRequestTransition.objects.filter(consent_request=instance)
+    if existing_logs.exists():
+        from_state = existing_logs.latest("created").to_state
+    else:
+        from_state = "PENDING"
+    ConsentRequestTransition.objects.create(
+        consent_request=instance,
+        from_state=from_state,
+        to_state=instance.status,
+    )
 
 
 class AccessLog(BaseModel):
@@ -268,4 +290,4 @@ class AccessLog(BaseModel):
     access_time = models.DateTimeField(auto_now_add=True)
 
     POST_REQUESTED_FIELDS = ["record_id", "practitioner_id"]
-    SERIALIZATION_FIELDS = ["record_id", "practitioner"] + ["access_time"]
+    SERIALIZATION_FIELDS = ["uuid", "record_id", "practitioner", "access_time"]
