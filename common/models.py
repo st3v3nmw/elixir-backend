@@ -42,7 +42,7 @@ class BaseModel(models.Model):
             for field, objects in foreign_key_saves.items():
                 for object in objects:
                     if not isinstance(value, str):
-                        object[f'{parent_obj._meta.model_name}_id'] = parent_obj.uuid
+                        object[f"{parent_obj._meta.model_name}_id"] = parent_obj.uuid
                         created, value = foreign_key_models[field].create(object)
                     getattr(parent_obj, field).add(value)
             for field, id_list in many_to_many_saves.items():
@@ -76,10 +76,6 @@ class BaseModel(models.Model):
             else:
                 result[field] = str(obj)
         return result
-
-    def fhir_serialize(self):
-        """Serialize self as an FHIR resource."""
-        raise NotImplementedError  # Implemented by child class
 
     class Meta:  # noqa
         abstract = True

@@ -4,7 +4,6 @@ from functools import reduce
 
 from common.models import BaseModel
 
-
 GENDERS = ["Male", "Female"]
 
 REGIONS = {
@@ -75,7 +74,7 @@ DISCHARGE_TYPES = [
     "Other Health Facility",
     "Expired",
     "Left Against Medical Advice",
-    "Not Documented"
+    "Not Documented",
 ]
 ENCOUNTER_STATUS = [
     "Planned",

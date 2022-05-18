@@ -3,9 +3,9 @@
 import json
 import os
 
-from django.test import Client
 import jwt
 import pytest
+from django.test import Client
 
 
 def test_user_registration_endpoint_missing_fields() -> None:
@@ -50,7 +50,6 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
     patient_default_fields_fixture["date_joined"] = response_json["data"]["date_joined"]
     patient_default_fields_fixture["is_active"] = True
     patient_default_fields_fixture.pop("password")
-    patient_default_fields_fixture["records"] = []
     patient_default_fields_fixture["relatives"] = []
     assert response_json == {
         "status": "success",
@@ -60,14 +59,12 @@ def test_user_registration_endpoint_proper_data(patient_default_fields_fixture) 
 
     # attempt to register user with the same data
     patient_default_fields_fixture["password"] = "some-password"
-    patient_default_fields_fixture.pop("records")
     patient_default_fields_fixture.pop("relatives")
     response = client.post(
         "/api/auth/register/",
         patient_default_fields_fixture,
         content_type="application/json",
     )
-    patient_default_fields_fixture["records"] = []
     patient_default_fields_fixture["relatives"] = []
     response_json = json.loads(response.content)
     assert response_json == {
@@ -143,11 +140,3 @@ def test_physician_login_roles(doctor_fixture, practitioner_fixture):
     )
     assert decoded_token["sub"] == doctor_fixture.uuid
     assert decoded_token["roles"] == "PATIENT PRACTITIONER PHYSICIAN"
-
-
-def test_get_public_key():
-    """Test fetching the AUTH server's public key."""
-    client = Client()
-    response_json = json.loads(client.get("/api/auth/public-key/").content)
-    assert response_json["data"]["algorithm"] == "RS384"
-    assert response_json["data"]["public_key"] == os.environ["JWT_PUBLIC_KEY"]

@@ -8,31 +8,15 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
-from .models import (
-    AccessLog,
-    ConsentRequest,
-    Facility,
-    Practitioner,
-    Record,
-    RecordRating,
-    Tenure,
-)
 from authentication.models import User
 from common.middleware import require_roles, require_service
 from common.payload import create_error_payload, create_success_payload
 from common.utils import create, search_table, validate_post_data
 
+from .models import (AccessLog, ConsentRequest, Facility, Practitioner, Record,
+                     RecordRating, Tenure)
 
 # Health Facilities
-
-
-@require_roles(["PATIENT", "PRACTITIONER"])
-@require_GET
-@require_service("INDEX")
-def get_facility(request, pk):
-    """GET a facility."""
-    facility = get_object_or_404(Facility, uuid=pk)
-    return create_success_payload(facility.serialize())
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
@@ -65,15 +49,6 @@ def register_practitioner(request):
     return create(Practitioner, request)
 
 
-@require_roles(["PRACTITIONER"])
-@csrf_exempt
-@require_POST
-@require_service("INDEX")
-def register_tenure(request):
-    """Register a practitioner's tenure at a specific facility."""
-    return create(Tenure, request)
-
-
 @require_roles(["PATIENT", "PRACTITIONER"])
 @require_GET
 @require_service("INDEX")
@@ -84,12 +59,7 @@ def get_practitioner(request, user_id):
     extra = practitioner.serialize()
     latest_tenure.SERIALIZATION_FIELDS = ["uuid", "facility", "start", "end"]
     extra["latest_tenure"] = latest_tenure.serialize()
-    return create_success_payload(
-        {
-            "fhir": practitioner.fhir_serialize(),
-            "extra": extra,
-        }
-    )
+    return create_success_payload(extra)
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])
@@ -99,10 +69,7 @@ def list_practitioners(request):
     """List all registered practitioners."""
     practitioners = Practitioner.objects.all()
     return create_success_payload(
-        [
-            {"fhir": practitioner.fhir_serialize(), "extra": practitioner.serialize()}
-            for practitioner in practitioners
-        ]
+        [practitioner.serialize() for practitioner in practitioners]
     )
 
 
@@ -150,7 +117,12 @@ def get_record(request, doc_id):
 @require_service("INDEX")
 def list_records(request, user_id):
     """List all records belonging to a particular user."""
-    records = list(map(lambda x: x.serialize(), Record.objects.filter(patient=user_id)))
+    records = list(
+        map(
+            lambda x: x.serialize(),
+            Record.objects.filter(patient=user_id).order_by("-created"),
+        )
+    )
 
     if "PRACTITIONER" in request.token["roles"]:
         tenure = Tenure.objects.get(practitioner__user=request.token["sub"])
@@ -179,18 +151,8 @@ def list_records(request, user_id):
 @require_POST
 @require_service("INDEX")
 def create_consent_request(request):
-    """Create a consent request."""
+    """Create a ConsentRequest."""
     return create(ConsentRequest, request)
-
-
-@require_roles(["PATIENT", "PRACTITIONER"])
-@csrf_exempt
-@require_GET
-@require_service("INDEX")
-def get_consent_request(request, request_id):
-    """GET a consent request."""
-    consent_request = get_object_or_404(ConsentRequest, uuid=request_id)
-    return create_success_payload(consent_request.serialize())
 
 
 @require_roles(["PATIENT", "PRACTITINER"])
@@ -198,7 +160,7 @@ def get_consent_request(request, request_id):
 @require_POST
 @require_service("INDEX")
 def update_consent_request(request, request_id):
-    """UPDATE the status of a consent request."""
+    """UPDATE the status of a ConsentRequest."""
     consent_request = get_object_or_404(ConsentRequest, uuid=request_id)
     is_valid, request_data, debug_data = validate_post_data(request, ["to_state"])
     if not is_valid:
@@ -210,21 +172,12 @@ def update_consent_request(request, request_id):
     return create_success_payload(consent_request.serialize())
 
 
-@require_roles(["PATIENT", "PRACTITIONER"])
-@csrf_exempt
-@require_GET
-@require_service("INDEX")
-def list_consent_requests(request, record_id):
-    """List all consent requests for a particular record."""
-    requests = ConsentRequest.objects.filter(record__in=record_id)
-    return create_success_payload([request.serialize() for request in requests])
-
-
 @require_roles(["PATIENT"])
 @csrf_exempt
 @require_GET
 @require_service("INDEX")
 def list_user_consent_requests(request, user_id):
+    """List all the ConsentRequests that a user has received."""
     requests = ConsentRequest.objects.filter(record__patient=user_id).order_by(
         "-created"
     )
@@ -264,36 +217,7 @@ def create_access_log(request):
         return create_success_payload(latest_log_entry.latest("created").serialize())
 
 
-@require_roles(["PATIENT"])
-@csrf_exempt
-@require_GET
-@require_service("INDEX")
-def get_access_log(request, log_id):
-    """GET an access log entry."""
-    log = get_object_or_404(AccessLog, uuid=log_id)
-    return create_success_payload(log.serialize())
-
-
-@require_roles(["PATIENT"])
-@csrf_exempt
-@require_GET
-@require_service("INDEX")
-def list_access_logs(request, record_id):
-    """List all access logs for a particular record."""
-    logs = AccessLog.objects.filter(record=record_id)
-    return create_success_payload([log.serialize() for log in logs])
-
-
 # Patient
-
-
-@require_roles(["PATIENT", "PRACTITIONER"])
-@require_GET
-@require_service("INDEX")
-def get_patient(request, patient_id):
-    """GET a patient in FHIR format."""
-    patient = get_object_or_404(User, uuid=patient_id)
-    return create_success_payload(patient.fhir_serialize())
 
 
 @require_roles(["PRACTITIONER"])

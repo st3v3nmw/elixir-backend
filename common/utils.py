@@ -1,13 +1,13 @@
 """This module houses common miscellaneous utils."""
 
 import json
-from math import sqrt
-import requests
 
+import requests
 from django.contrib.postgres.search import SearchVector
 
+from common.payload import (ErrorCode, create_error_payload,
+                            create_success_payload)
 from facility.models import Visit
-from common.payload import create_error_payload, create_success_payload, ErrorCode
 
 
 def validate_post_data(request, required_fields):
@@ -73,6 +73,7 @@ def call_api(
     auth_token: str,
     body={},
 ):
+    """Call the API endpoint and return the response."""
     headers = {"Authorization": f"Bearer {auth_token}"}
     if method == "GET":
         r = requests.get(endpoint, headers=headers)

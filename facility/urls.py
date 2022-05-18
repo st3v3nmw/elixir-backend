@@ -13,11 +13,4 @@ urlpatterns = [
     path("rxterm/search/", views.search_rxterm),
     path("visits/new/", views.create_visit),
     path("visits/<uuid:visit_id>/", views.get_visit),
-    path("visits/practitioners/<uuid:practitioner_id>/", views.list_visits),
-    path("encounters/new/", views.create_encounter),
-    path("encounters/<uuid:encounter_id>/", views.get_encounter),
-    path("encounters/practitioners/<uuid:practitioner_id>/", views.list_encounters),
-    path("observations/new/", views.create_observation),
-    path("charge-items/new/", views.create_charge_item),
-    path("prescriptions/new/", views.create_prescription),
 ]

@@ -6,7 +6,7 @@ import threading
 from django.db import models
 from django.utils import timezone
 
-from common.constants import ENCOUNTER_STATUS, DISCHARGE_TYPES, VISIT_TYPES
+from common.constants import DISCHARGE_TYPES, ENCOUNTER_STATUS, VISIT_TYPES
 from common.models import BaseModel
 
 index_base_url = (
@@ -213,6 +213,7 @@ class Visit(BaseModel):
         return sum(encounter.total for encounter in self.encounters)
 
     def index_record(self, auth_token):
+        """Sync record metadata with the document registry/index."""
         from common.utils import call_api
 
         def index_record_inner(visit, raw_auth_token):

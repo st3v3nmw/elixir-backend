@@ -1,23 +1,21 @@
 """This module houses API endpoints for the authentication app."""
 
-from datetime import timedelta
 import os
+from datetime import timedelta
 
 import jwt
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_POST
 
-from .models import NextOfKin, User
-from common.middleware import require_roles, require_service
-from common.payload import (
-    create_error_payload,
-    ErrorCode,
-    create_success_payload,
-)
+from common.middleware import require_service
+from common.payload import (ErrorCode, create_error_payload,
+                            create_success_payload)
 from common.utils import create, validate_post_data
 from index.models import Practitioner
+
+from .models import User
 
 
 @csrf_exempt
@@ -68,36 +66,3 @@ def login(request):
         )
     else:
         return create_error_payload({"message": ErrorCode.LOGIN_FAILED})
-
-
-@require_GET
-@require_service("AUTH")
-def get_public_key(request):
-    """Return the Auth server's public key."""
-    return create_success_payload(
-        {"algorithm": "RS384", "public_key": os.environ["JWT_PUBLIC_KEY"]}
-    )
-
-
-# @csrf_exempt
-# @require_POST
-# @require_service("AUTH")
-# def reset_password(request):
-#     pass
-
-
-# @require_roles(["PATIENT"])
-# @csrf_exempt
-# @require_POST
-# @require_service("AUTH")
-# def change_password(request):
-#     pass
-
-
-@require_roles(["PATIENT"])
-@csrf_exempt
-@require_POST
-@require_service("AUTH")
-def register_next_of_kin(request):
-    """Save a next of kin relationship."""
-    return create(NextOfKin, request)

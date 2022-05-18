@@ -6,15 +6,10 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from authentication.models import User
+from common.constants import (CONSENT_REQUEST_STATUSES, COUNTIES,
+                              PRACTITIONER_TYPES, REGIONS, VISIT_TYPES,
+                              counties_to_regions_map)
 from common.models import BaseModel, Entity
-from common.constants import (
-    CONSENT_REQUEST_STATUSES,
-    counties_to_regions_map,
-    COUNTIES,
-    PRACTITIONER_TYPES,
-    REGIONS,
-    VISIT_TYPES,
-)
 
 # Health Facility
 
@@ -55,13 +50,16 @@ class Facility(Entity):
         "api_base_url",
         "date_joined",
         "is_active",
-        "date_joined",
     ]
 
     @property
     def region(self):
         """Return the region the facility's county belongs to."""
         return counties_to_regions_map[self.county]
+
+    def __str__(self):
+        """Return the string representation of the Facility."""
+        return f"{self.name} ({self.uuid})"
 
 
 # Practitioner
@@ -78,27 +76,9 @@ class Practitioner(BaseModel):
     VALIDATION_FIELDS = ["user_id", "type"]
     SERIALIZATION_FIELDS = ["uuid", "user"] + VALIDATION_FIELDS + ["created"]
 
-    def fhir_serialize(self):
-        """Serialize self as a Practitioner FHIR resource."""
-        return {
-            "resourceType": "Practitioner",
-            "identifier": [self.uuid, self.user.uuid],
-            "active": self.user.is_active,
-            "name": [
-                {
-                    "use": "official",
-                    "text": self.user.full_name,
-                    "family": self.user.last_name,
-                    "given": self.user.first_name,
-                }
-            ],
-            "telecom": [{"system": "phone", "value": self.user.phone_number}],
-            "gender": self.user.gender.lower(),
-            "birthDate": self.user.date_of_birth,
-            "address": {"text": self.user.address},
-            "qualification": [{"code": self.type}],
-            "communication": [{"language": "en", "preferred": True}],
-        }
+    def __str__(self):
+        """Return the string representation of the Practitioner."""
+        return f"{self.user.first_name} {self.user.last_name} ({self.uuid})"
 
 
 class Tenure(BaseModel):
@@ -116,7 +96,7 @@ class Tenure(BaseModel):
 
     class Meta:  # noqa
         unique_together = ("practitioner", "facility", "start")
-        ordering = ["start"]
+        ordering = ["-start"]
 
 
 # Records
@@ -268,6 +248,7 @@ class ConsentRequestTransition(BaseModel):
     dispatch_uid="update_status",
 )
 def update_consent_request_status(sender, instance, **kwargs):
+    """Create a ConsentRequestTransition log when the ConsentRequest state changes."""
     existing_logs = ConsentRequestTransition.objects.filter(consent_request=instance)
     if existing_logs.exists():
         from_state = existing_logs.latest("created").to_state

@@ -2,8 +2,8 @@
 
 import json
 
-from django.test import Client
 import pytest
+from django.test import Client
 
 from facility.models import ICD10, ICD10Category
 

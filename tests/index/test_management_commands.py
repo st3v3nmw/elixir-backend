@@ -1,10 +1,10 @@
 """Test index management commands."""
 
-from io import StringIO
 import unittest
+from io import StringIO
 
-from django.core.management import call_command
 import pytest
+from django.core.management import call_command
 
 
 @pytest.mark.django_db

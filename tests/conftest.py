@@ -2,12 +2,11 @@
 
 import json
 
-from django.test import Client
 import pytest
+from django.test import Client
 
 from authentication.models import User
 from index.models import Facility, Practitioner, Tenure
-
 
 # authentication app
 

@@ -1,11 +1,8 @@
 """This module houses models for the authentication app."""
 
-from django.contrib.auth.models import (
-    AbstractBaseUser,
-    BaseUserManager,
-    PermissionsMixin,
-)
-from django.db import models
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
+                                        PermissionsMixin)
+from django.db import IntegrityError, models
 
 from common.constants import GENDERS
 from common.models import BaseModel, Entity
@@ -65,52 +62,15 @@ class User(AbstractBaseUser, Entity, PermissionsMixin):
 
     @classmethod
     def create(cls, fields):
-        return True, User.objects.create_user(**fields)
-
-    @property
-    def full_name(self) -> str:
-        """Return the User's full name."""
-        return f"{self.first_name} {self.last_name}"
+        """Create a User."""
+        try:
+            return True, User.objects.create_user(**fields)
+        except IntegrityError as e:
+            return False, str(e)
 
     def __str__(self) -> str:
         """Return string representation of User."""
         return f"{self.first_name} {self.last_name} ({self.uuid})"
-
-    def fhir_serialize(self):
-        """Serialize self as a Patient FHIR resource."""
-        contacts = []
-        for relation in NextOfKin.objects.filter(user=self):
-            contacts.append(
-                {
-                    "relationship": relation.relationship,
-                    "name": relation.next_of_kin.full_name,
-                    "telecom": {
-                        "system": "phone",
-                        "value": relation.next_of_kin.phone_number,
-                    },
-                    "gender": relation.next_of_kin.gender.lower(),
-                }
-            )
-
-        return {
-            "resourceType": "Patient",
-            "identifier": [self.uuid],
-            "active": self.is_active,
-            "name": [
-                {
-                    "use": "official",
-                    "text": self.full_name,
-                    "family": self.last_name,
-                    "given": self.first_name,
-                }
-            ],
-            "telecom": [{"system": "phone", "value": self.phone_number}],
-            "gender": self.gender.lower(),
-            "birthDate": self.date_of_birth,
-            "address": {"text": self.address},
-            "contact": contacts,
-            "communication": [{"language": "en", "preferred": True}],
-        }
 
 
 class NextOfKin(BaseModel):
@@ -135,7 +95,7 @@ class NextOfKin(BaseModel):
     POST_REQUIRED_FIELDS = ["user_id", "next_of_kin_id", "relationship", "can_consent"]
     SERIALIZATION_FIELDS = ["uuid"] + POST_REQUIRED_FIELDS
 
-    class Meta:
+    class Meta:  # noqa
         unique_together = (
             "user",
             "next_of_kin",

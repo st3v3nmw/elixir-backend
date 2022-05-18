@@ -4,11 +4,11 @@ import csv
 
 from tqdm import tqdm
 
-from facility.models import HCPCS, ICD10, ICD10Category, LOINC, RxTerm
+from facility.models import HCPCS, ICD10, LOINC, ICD10Category, RxTerm
 
 # Data obtained from
 # https://www.cms.gov/medicaremedicare-fee-service-paymentphysicianfeeschedpfs-relative-value-files/rvu22b
-# CPT codes and descriptions only are copyright 2021 American Medical Association.  All Rights Reserved.
+# CPT codes and descriptions only are copyright 2021 American Medical Association.  All Rights Reserved.  # noqa
 # Dental codes (D codes) are copyright 2022/23 American Dental Association.  All Rights Reserved.
 HCPCS_SOURCE_CSV = "facility/scripts/data/PPRRVU22_APR.csv"
 

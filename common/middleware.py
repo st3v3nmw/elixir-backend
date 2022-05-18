@@ -1,10 +1,11 @@
 """This module houses access control decorators & middleware."""
 
-from functools import wraps
-import jwt
 import os
+from functools import wraps
 
-from common.payload import create_error_payload, ErrorCode
+import jwt
+
+from common.payload import ErrorCode, create_error_payload
 from common.utils import parameterized
 
 
@@ -56,7 +57,7 @@ class LoginRequiredMiddleware:
             decoded_token = jwt.decode(
                 token[7:], os.environ["JWT_PUBLIC_KEY"], algorithms=["RS384"]
             )
-            decoded_token['raw'] = token[7:]
+            decoded_token["raw"] = token[7:]
         except jwt.exceptions.DecodeError:
             return create_error_payload({}, message=ErrorCode.UNAUTHORIZED, status=401)
 
