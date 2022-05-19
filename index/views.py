@@ -13,8 +13,15 @@ from common.middleware import require_roles, require_service
 from common.payload import create_error_payload, create_success_payload
 from common.utils import create, search_table, validate_post_data
 
-from .models import (AccessLog, ConsentRequest, Facility, Practitioner, Record,
-                     RecordRating, Tenure)
+from .models import (
+    AccessLog,
+    ConsentRequest,
+    Facility,
+    Practitioner,
+    Record,
+    RecordRating,
+    Tenure,
+)
 
 # Health Facilities
 
@@ -55,11 +62,7 @@ def register_practitioner(request):
 def get_practitioner(request, user_id):
     """GET a practitioner."""
     practitioner = get_object_or_404(Practitioner, user__uuid=user_id)
-    latest_tenure = practitioner.employment_history.latest("start")
-    extra = practitioner.serialize()
-    latest_tenure.SERIALIZATION_FIELDS = ["uuid", "facility", "start", "end"]
-    extra["latest_tenure"] = latest_tenure.serialize()
-    return create_success_payload(extra)
+    return create_success_payload(practitioner.serialize())
 
 
 @require_roles(["PATIENT", "PRACTITIONER"])

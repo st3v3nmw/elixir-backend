@@ -67,7 +67,7 @@ class BaseModel(models.Model):
         result = {}
         for field in self.SERIALIZATION_FIELDS:
             obj = getattr(self, field)
-            if isinstance(obj, (bool, str, int)) or obj is None:
+            if isinstance(obj, (bool, str, int, dict)) or obj is None:
                 result[field] = obj
             elif isinstance(obj, models.Manager):
                 result[field] = [x.serialize() for x in obj.all()]

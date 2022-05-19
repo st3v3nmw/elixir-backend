@@ -6,9 +6,14 @@ from django.dispatch import receiver
 from django.utils import timezone
 
 from authentication.models import User
-from common.constants import (CONSENT_REQUEST_STATUSES, COUNTIES,
-                              PRACTITIONER_TYPES, REGIONS, VISIT_TYPES,
-                              counties_to_regions_map)
+from common.constants import (
+    CONSENT_REQUEST_STATUSES,
+    COUNTIES,
+    PRACTITIONER_TYPES,
+    REGIONS,
+    VISIT_TYPES,
+    counties_to_regions_map,
+)
 from common.models import BaseModel, Entity
 
 # Health Facility
@@ -74,11 +79,17 @@ class Practitioner(BaseModel):
     type = models.CharField(choices=PRACTITIONER_TYPES, max_length=32)
 
     VALIDATION_FIELDS = ["user_id", "type"]
-    SERIALIZATION_FIELDS = ["uuid", "user"] + VALIDATION_FIELDS + ["created"]
+    SERIALIZATION_FIELDS = ["uuid", "user", "type", "latest_tenure", "created"]
 
     def __str__(self):
         """Return the string representation of the Practitioner."""
         return f"{self.user.first_name} {self.user.last_name} ({self.uuid})"
+
+    @property
+    def latest_tenure(self):
+        tenure = self.employment_history.latest("start")
+        tenure.SERIALIZATION_FIELDS = ["uuid", "facility", "start", "end"]
+        return tenure.serialize()
 
 
 class Tenure(BaseModel):
