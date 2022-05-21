@@ -1,5 +1,7 @@
 # Elixir Backend
 
+The frontend's [here](https://github.com/st3v3nmw/elixir-frontend).
+
 ## Setup
 
 1. Fresh install?, run `scripts/setup.sh` to install the required packages like Docker.
